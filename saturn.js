@@ -1,34 +1,16 @@
 "use strict";
 
-var sj = {
-	loaded: false,
-	endpoint: null,
-	onBeforeRequestCallback: null,
-	onClickCallback: null,
-	onSubmitCallback: null,
-	init: function(p) {
-		document.addEventListener('DOMContentLoaded', function() {
-			document.body.addEventListener("click", sj.onclick, false);
-			document.body.addEventListener("submit", sj.onsubmit, false);
+// TODO Container widget
 
-			sj.loaded = true;
-			for (var i in sj.components) {
-				sj.component(i, sj.components[i]);
-			}
+var sj = new function(endpoint) {
 
-			var event = document.createEvent('Event');
-			event.initEvent('SjStarted', true, true);
-			document.dispatchEvent(event);
-		}, false);
-	},
-	toKebab: function(s) {
-		return s.replace(/[A-Z]/g, function(m) { return "-"+m.toLowerCase() })
-	},
-	toKamel: function(s) {
-		return s.replace(/-[a-z]/g, function(m) { return m.substr(1).toUpperCase() })
-	},
-	_renderSingle: function(el, k, v) {
-		if (!sj.loaded || !el) return;
+	this.setEndpoint = function(url) {
+		endpoint = url;
+	}
+
+	// Render function
+	function renderSingle(el, k, v) {
+		if (!loaded || !el) return;
 		var list = k == "_" ? [el] : el.querySelectorAll("[name="+k+"]");
 		if (!list.length) return console.error("Element not found", el, k, v)
 
@@ -60,37 +42,31 @@ var sj = {
 				}
 			}
 		}
-	},
-	hasClass: function(el, c) {
+	}
+
+	// Utilities
+	this.hasClass = function(el, c) {
 		return (el.className.search(/\bc\b/) > -1);
-	},
-	removeClass: function(el, c) {
+	}
+
+	this.removeClass = function(el, c) {
 		var re = new RegExp("\\b\s*"+c+"\\b");
 		el.className = el.className.replace(re, '').replace(/^\s+|\s$/g, '');
-	},
-	addClass: function(el, c) {
+	}
+
+	this.addClass = function(el, c) {
 		if (!sj.hasClass(el, c)) el.className += " "+c;
-	},
-	toggleClass: function(el, c) {
+	}
+
+	this.toggleClass = function(el, c) {
 		if (sj.hasClass(el, c)) {
 			sj.addClass(el, c);
 		} else {
 			sj.removeClass(el, c);
 		}
-	},
+	}
 
-	parseHash: function(hash) {
-		var q = {};
-
-		var n = hash.search(/^#\//);
-		if (n > -1) hash = hash.substr(n+2);
-
-		var p = hash.substring(2).split(/[&=]/);
-		for (var i = 0; i < p.length; i+=2) q[p[i]] = p[i+1];
-		return q;
-	},
-
-	componentClass: function(id, obj) {
+	var componentClass = function(id, obj) {
 
 		this.oncreate = function() {}
 		this.onshow = function() {}
@@ -99,15 +75,15 @@ var sj = {
 		this.onhide = function() {}
 		this.onclick = function(ev, target) {}
 		this.onaction = function(ev, target) {
-			sj.onActionCallback(ev, this.el, target);
+			onActionCallback(ev, this.el, target);
 		}
 		this.onsubmit = function(ev, target) {
-			sj.onSubmitCallback(ev, this.el, target);
+			onSubmitCallback(ev, this.el, target);
 		}
 		this.onrequest = function() {}
 		this.onresponse = function() {}
 		this.onerror = function(json) {
-			sj.onErrorCallback(json);
+			onErrorCallback(json);
 		}
 
 		this.hide = function() {
@@ -124,10 +100,10 @@ var sj = {
 			if (b) this.show(); else this.hide();
 		}
 
-		this.hasClass = function(c) { return sj.hasClass(this.el, c) }
-		this.removeClass = function(c) { return sj.removeClass(this.el, c) }
-		this.addClass = function(c) { return sj.addClass(this.el, c) }
-		this.toggleClass = function(c) { return sj.toggleClass(this.el, c) }
+		this.hasClass = function(c) { return hasClass(this.el, c) }
+		this.removeClass = function(c) { return removeClass(this.el, c) }
+		this.addClass = function(c) { return addClass(this.el, c) }
+		this.toggleClass = function(c) { return toggleClass(this.el, c) }
 
 		this.render = function(p, sub) {
 			var el;
@@ -148,12 +124,12 @@ var sj = {
 						var clone = l.firstElementChild.cloneNode(true);
 						clone.hidden = false;
 						for (var k in p[i][j]) {
-							sj._renderSingle(clone, k, p[i][j][k]);
+							renderSingle(clone, k, p[i][j][k]);
 						}
 						l.appendChild(clone);
 					}
 				} else {
-					sj._renderSingle(el, i, p[i]);
+					renderSingle(el, i, p[i]);
 				}
 			}
 			if (this.onrender) this.onrender();
@@ -169,70 +145,74 @@ var sj = {
 			this[i] = obj[i];
 		}
 
-	},
-	components: {},
-	component: function(id, obj) {
-		sj.components[id] = (obj ? obj : {});
-		if (sj.loaded) {
-			sj.components[id] = new sj.componentClass(id, obj);
-			sj.components[id].oncreate();
+	}
+
+	this.component = function(id, obj) {
+		components[id] = (obj ? obj : {});
+		if (loaded) {
+			components[id] = new componentClass(id, obj);
+			components[id].oncreate();
 		}
-	},
+	}
 
-	c: function(id) {
-		return sj.components[id];
-	},
+	this.$ = function(id) {
+		return components[id];
+	}
 
-	onclick: function(ev) {
+	function parseHash(hash) {
+		var q = {};
+
+		var n = hash.search(/#[!\?]/);
+		if (n > -1) hash = hash.substring(n+2);
+
+		var p = hash.split(/[&=]/);
+		for (var i = 0; i < p.length; i+=2) q[p[i]] = (p[i+1] ? p[i+1] : null);
+		return q;
+	}
+
+	function onaction(ev) {
 		var el = ev.target;
 		if (!el) return;
 		while (!el.hasAttribute("data-component") && el != document.body) el = el.parentNode;
 		if (el == document.body) return;
 		var id = el.id;
 		var target = ev.target;
-		while (target.tagName != "A" && target != el) target = target.parentNode;
+		while (target.tagName != "A" && target.tagName != "FORM" && target != el) target = target.parentNode;
 		if (target.tagName == "A") {
-			if (target.hash.search(/^#\//) > -1) {
-				sj.components[id].onrequest(ev, target);
-				sj.request(target.hash);
+			if (target.hash.search(/^#\?/) > -1) {
+				components[id].onrequest(ev, target);
+				request(target.hash);
 				ev.preventDefault();
 			} else if (target.hash.search(/^#!/) > -1) {
-				sj.components[id].onaction(ev, target);
+				components[id].onaction(target.hash.substring(2), target);
+				ev.preventDefault();
 			}
-		} else {
-			sj.components[id].onclick(ev, target);
-		}
-	},
-
-	onsubmit: function(ev) {
-		var el = ev.target;
-		while (!el.hasAttribute("data-component") && el != document.body) el = el.parentNode;
-		if (el == document.body) return;
-		var id = el.id;
-		var target = ev.target;
-		while (target.tagName != "FORM" && target != el) target = target.parentNode;
-		if (target.tagName == "FORM") {
-			if (target.action.search(/#\//) > -1) {
-				sj.components[id].onrequest(ev, target);
-				sj.request(target.action, target);
+		} else if (target.tagName == "FORM") {
+			if (target.action.search(/#\?/) > -1) {
+				components[id].onrequest(ev, target);
+				request(target.action, target);
 				ev.preventDefault();
 			} else if (target.action.search(/#!/) > -1) {
-				sj.components[id].onsubmit(ev, el, target);
+				var p = target.action.search(/#!/);
+				components[id].onaction(parseHash(target.action), target);
+				ev.preventDefault();
 			}
+		} else {
+			components[id].onclick(ev, target);
 		}
-	},
+	}
 
-	request: function(query, form, silent) {
-		if (!sj.endpoint) return console.error("No endpoint defined!");
+	function request(query, form, silent) {
+		if (!endpoint) return console.error("No endpoint defined!");
 		var xhr = new XMLHttpRequest();
 		xhr.addEventListener("load", function(ev) {
 			var json = JSON.parse(ev.target.responseText);
 			if (json.error) {
-				sj.components[json.component].onerror(json);
-			} else if (json.component && sj.components[json.component]) {
-				sj.components[json.component].onresponse(json);
+				components[json.module].onerror(json);
+			} else if (json.module && components[json.module]) {
+				components[json.module].onresponse(json);
 			} else {
-				console.error("Component `"+json.component+"` not found");
+				console.error("Component `"+json.module+"` not found");
 			}
 			sj.removeClass(document.body, "wait");
 		}, false);
@@ -240,11 +220,11 @@ var sj = {
 			console.error(ev);
 		}, false);
 
-		if (typeof query == "string") query = sj.parseHash(query);
+		if (typeof query == "string") query = parseHash(query);
 		var q = [];
 		for (var i in query) q.push(i+"="+encodeURIComponent(query[i]));
-		if (sj.onBeforeRequestCallback) sj.onBeforeRequestCallback(q);
-		var url = sj.endpoint+"?"+q.join("&");
+		if (onBeforeRequestCallback) onBeforeRequestCallback(q);
+		var url = endpoint+"?"+q.join("&");
 
 		if (form) {
 			if (!(form instanceof FormData)) form = new FormData(form);
@@ -257,6 +237,25 @@ var sj = {
 
 		if (!silent) sj.addClass(document.body, "wait");
 	}
-};
 
-sj.init();
+	var loaded = false;
+	var endpoint = null;
+	var onBeforeRequestCallback = null;
+	var onClickCallback = null;
+	var onSubmitCallback = null;
+	var components = {};
+
+	document.addEventListener('DOMContentLoaded', function() {
+		document.body.addEventListener("click", onaction, false);
+		document.body.addEventListener("submit", onaction, false);
+
+		loaded = true;
+		for (var i in components) {
+			sj.component(i, components[i]);
+		}
+
+		var event = document.createEvent('Event');
+		event.initEvent('SjStarted', true, true);
+		document.dispatchEvent(event);
+	}, false);
+};
