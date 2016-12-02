@@ -3,6 +3,7 @@
 var sj = {
 	loaded: false,
 	endpoint: null,
+	onBeforeRequestCallback: null,
 	onClickCallback: null,
 	onSubmitCallback: null,
 	init: function(p) {
@@ -81,10 +82,10 @@ var sj = {
 	parseHash: function(hash) {
 		var q = {};
 
-		var n = hash.search(/#\//);
+		var n = hash.search(/^#\//);
 		if (n > -1) hash = hash.substr(n+2);
 
-		var p = hash.split(/[&=]/);
+		var p = hash.substring(2).split(/[&=]/);
 		for (var i = 0; i < p.length; i+=2) q[p[i]] = p[i+1];
 		return q;
 	},
@@ -241,8 +242,8 @@ var sj = {
 
 		if (typeof query == "string") query = sj.parseHash(query);
 		var q = [];
-		if (A.user.is_logged) q.push('token='+A.user.token); // FIXME
 		for (var i in query) q.push(i+"="+encodeURIComponent(query[i]));
+		if (sj.onBeforeRequestCallback) sj.onBeforeRequestCallback(q);
 		var url = sj.endpoint+"?"+q.join("&");
 
 		if (form) {
