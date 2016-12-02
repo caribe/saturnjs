@@ -4,15 +4,15 @@
 
 var sj = new function(endpoint) {
 
-	this.setEndpoint = function(url) {
-		endpoint = url;
-	}
+	this.setEndpoint = function(url) { endpoint = url }
+	this.setRequestWait = function(callback) { onRequestWait = callback }
+	this.setRequestComplete = function(callback) { setRequestComplete = callback }
 
 	// Render function
 	function renderSingle(el, k, v) {
 		if (!loaded || !el) return;
 		var list = k == "_" ? [el] : el.querySelectorAll("[name="+k+"]");
-		if (!list.length) return console.error("Element not found", el, k, v)
+		if (!list.length) return console.error("Element not found", el, k, v);
 
 		if (typeof v == "string" || typeof v == "number") v = { _: v };
 		else if (typeof v == "boolean") v = { hidden: !v };
@@ -155,8 +155,39 @@ var sj = new function(endpoint) {
 		}
 	}
 
+	function containerClass(id, start) {
+		this.set = function(id) {
+			for (var i = 0; i < this.el.children.length; i++) {
+				var el = this.el.children[i];
+				if (el.hasAttribute("data-component")) {
+					sj.$(el.id).visible(el.id == id);
+				}
+			}
+		}
+
+		this.el = document.getElementById(id);
+		if (!this.el) throw "Container `"+id+"` not found";
+		this.el.setAttribute("data-container", "");
+
+		for (var i = 0; i < this.el.children.length; i++) {
+			var el = this.el.children[i];
+			sj.$(el.id).visible(el.id == start);
+		}
+	}
+
+	this.container = function(id, start) {
+		containers[id] = start;
+		if (loaded) {
+			containers[id] = new containerClass(id, start);
+		}
+	}
+
 	this.$ = function(id) {
-		return components[id];
+		if (components[id]) {
+			return components[id];
+		} else if (containers[id]) {
+			return containers[id];
+		}
 	}
 
 	function parseHash(hash) {
@@ -177,6 +208,7 @@ var sj = new function(endpoint) {
 		if (el == document.body) return;
 		var id = el.id;
 		var target = ev.target;
+
 		while (target.tagName != "A" && target.tagName != "FORM" && target != el) target = target.parentNode;
 		if (target.tagName == "A") {
 			if (target.hash.search(/^#\?/) > -1) {
@@ -187,7 +219,7 @@ var sj = new function(endpoint) {
 				components[id].onaction(target.hash.substring(2), target);
 				ev.preventDefault();
 			}
-		} else if (target.tagName == "FORM") {
+		} else if (target.tagName == "FORM" && ev.type == 'submit') {
 			if (target.action.search(/#\?/) > -1) {
 				components[id].onrequest(ev, target);
 				request(target.action, target);
@@ -202,18 +234,19 @@ var sj = new function(endpoint) {
 		}
 	}
 
-	function request(query, form, silent) {
-		if (!endpoint) return console.error("No endpoint defined!");
+	function request(query, form) {
+		if (!endpoint) throw "No endpoint defined!";
 		var xhr = new XMLHttpRequest();
 		xhr.addEventListener("load", function(ev) {
 			var json = JSON.parse(ev.target.responseText);
 			if (json.error) {
-				components[json.module].onerror(json);
-			} else if (json.module && components[json.module]) {
-				components[json.module].onresponse(json);
+				components[json.component].onerror(json);
+			} else if (json.component && components[json.component]) {
+				components[json.component].onresponse(json);
 			} else {
-				console.error("Component `"+json.module+"` not found");
+				throw "Component `"+json.component+"` not found";
 			}
+			if (onRequestComplete) onRequestComplete();
 			sj.removeClass(document.body, "wait");
 		}, false);
 		xhr.addEventListener("error", function(ev) {
@@ -235,15 +268,18 @@ var sj = new function(endpoint) {
 			xhr.send();
 		}
 
-		if (!silent) sj.addClass(document.body, "wait");
+		if (onRequestWait) onRequestWait();
 	}
 
 	var loaded = false;
 	var endpoint = null;
 	var onBeforeRequestCallback = null;
+	var onRequestWait = null;
+	var onRequestComplete = null;
 	var onClickCallback = null;
 	var onSubmitCallback = null;
 	var components = {};
+	var containers = {};
 
 	document.addEventListener('DOMContentLoaded', function() {
 		document.body.addEventListener("click", onaction, false);
@@ -252,6 +288,9 @@ var sj = new function(endpoint) {
 		loaded = true;
 		for (var i in components) {
 			sj.component(i, components[i]);
+		}
+		for (var i in containers) {
+			sj.container(i, containers[i]);
 		}
 
 		var event = document.createEvent('Event');
