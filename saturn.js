@@ -1,7 +1,5 @@
 "use strict";
 
-// TODO Container widget
-
 var sj = new function(endpoint) {
 
 	this.setEndpoint = function(url) { endpoint = url }
@@ -104,6 +102,10 @@ var sj = new function(endpoint) {
 		this.removeClass = function(c) { return removeClass(this.el, c) }
 		this.addClass = function(c) { return addClass(this.el, c) }
 		this.toggleClass = function(c) { return toggleClass(this.el, c) }
+
+		this.action = function(q) {
+			sj.request(q);
+		},
 
 		this.render = function(p, sub) {
 			var el;
@@ -213,7 +215,7 @@ var sj = new function(endpoint) {
 		if (target.tagName == "A") {
 			if (target.hash.search(/^#\?/) > -1) {
 				components[id].onrequest(ev, target);
-				request(target.hash);
+				sj.request(target.hash);
 				ev.preventDefault();
 			} else if (target.hash.search(/^#!/) > -1) {
 				components[id].onaction(target.hash.substring(2), target);
@@ -222,7 +224,7 @@ var sj = new function(endpoint) {
 		} else if (target.tagName == "FORM" && ev.type == 'submit') {
 			if (target.action.search(/#\?/) > -1) {
 				components[id].onrequest(ev, target);
-				request(target.action, target);
+				sj.request(target.action, target);
 				ev.preventDefault();
 			} else if (target.action.search(/#!/) > -1) {
 				var p = target.action.search(/#!/);
@@ -234,7 +236,7 @@ var sj = new function(endpoint) {
 		}
 	}
 
-	function request(query, form) {
+	this.request = function(query, form) {
 		if (!endpoint) throw "No endpoint defined!";
 		var xhr = new XMLHttpRequest();
 		xhr.addEventListener("load", function(ev) {
