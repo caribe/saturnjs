@@ -2,9 +2,13 @@
 
 var sj = new function(endpoint) {
 
-	this.setEndpoint = function(url) { endpoint = url }
-	this.setRequestWait = function(callback) { onRequestWait = callback }
-	this.setRequestComplete = function(callback) { setRequestComplete = callback }
+	this.setEndpoint = function(url) { endpoint = url };
+	this.setRequestWait = function(callback) { onRequestWait = callback };
+	this.setRequestComplete = function(callback) { setRequestComplete = callback };
+	this.setClickCallback = function(callback) { onClickCallback = callback };
+	this.setErrorCallback = function(callback) { onErrorCallback = callback };
+	this.setActionCallback = function(callback) { onActionCallback = callback };
+	this.setBeforeRequestCallback = function(callback) { onBeforeRequestCallback = callback };
 
 	// Render function
 	function renderSingle(el, k, v) {
@@ -81,7 +85,8 @@ var sj = new function(endpoint) {
 		this.onrequest = function() {}
 		this.onresponse = function() {}
 		this.onerror = function(json) {
-			onErrorCallback(json);
+			if (onSubmitCallback) onErrorCallback(json);
+			else console.error(json);
 		}
 
 		this.hide = function() {
@@ -275,13 +280,17 @@ var sj = new function(endpoint) {
 
 	var loaded = false;
 	var endpoint = null;
+	var components = {};
+	var containers = {};
+
 	var onBeforeRequestCallback = null;
 	var onRequestWait = null;
 	var onRequestComplete = null;
+
+	var onActionCallback = null;
 	var onClickCallback = null;
 	var onSubmitCallback = null;
-	var components = {};
-	var containers = {};
+	var onErrorCallback = null;
 
 	document.addEventListener('DOMContentLoaded', function() {
 		document.body.addEventListener("click", onaction, false);
