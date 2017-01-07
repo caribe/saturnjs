@@ -162,14 +162,23 @@ var sj = new function(endpoint) {
 		}
 	}
 
-	function containerClass(id, start) {
+	function containerClass(id, start, obj) {
+		this.current = start;
+		this.onChange = function(current) {}
+
 		this.set = function(id) {
+			this.current = id;
 			for (var i = 0; i < this.el.children.length; i++) {
 				var el = this.el.children[i];
 				if (el.hasAttribute("data-component")) {
 					sj.$(el.id).visible(el.id == id);
 				}
 			}
+			this.onChange(this.current);
+		}
+
+		this.get = function() {
+			return this.current;
 		}
 
 		this.el = document.getElementById(id);
@@ -180,12 +189,16 @@ var sj = new function(endpoint) {
 			var el = this.el.children[i];
 			sj.$(el.id).visible(el.id == start);
 		}
+
+		if (obj) for (var i in obj) {
+			this[i] = obj[i];
+		}
 	}
 
-	this.container = function(id, start) {
-		containers[id] = start;
+	this.container = function(id, start, obj) {
+		containers[id] = [start, obj];
 		if (loaded) {
-			containers[id] = new containerClass(id, start);
+			containers[id] = new containerClass(id, start, obj);
 		}
 	}
 
@@ -257,7 +270,7 @@ var sj = new function(endpoint) {
 			sj.removeClass(document.body, "wait");
 		}, false);
 		xhr.addEventListener("error", function(ev) {
-			console.error(ev);
+			console.error(ev.message, ev);
 		}, false);
 
 		if (typeof query == "string") query = parseHash(query);
@@ -301,7 +314,7 @@ var sj = new function(endpoint) {
 			sj.component(i, components[i]);
 		}
 		for (var i in containers) {
-			sj.container(i, containers[i]);
+			sj.container(i, containers[i][0], containers[i][1]);
 		}
 
 		var event = document.createEvent('Event');
