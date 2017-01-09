@@ -207,6 +207,8 @@ var sj = new function(endpoint) {
 			return components[id];
 		} else if (containers[id]) {
 			return containers[id];
+		} else {
+			console.error("`"+id+"` not found");
 		}
 	}
 
