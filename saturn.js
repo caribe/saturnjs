@@ -15,7 +15,6 @@ var sj = new function(endpoint) {
 		if (!loaded || !el) return;
 		var list = k == "_" ? [el] : el.querySelectorAll("[name="+k+"]");
 		if (!list.length) return console.error("Element not found", el, k, v);
-
 		if (typeof v == "string" || typeof v == "number") v = { _: v };
 		else if (typeof v == "boolean") v = { hidden: !v };
 
@@ -23,7 +22,7 @@ var sj = new function(endpoint) {
 			for (j = 0; j < list.length; j++) {
 				var l = list[j];
 				if (i == "_") {
-					if (l.tagName == "INPUT" && (l.type == "radio" || l.type == "checkbox")) {
+					if (l.tagName == "INPUT" && l.type == "radio") {
 						l.checked = (l.value == v[i]);
 					} else if (l.tagName == "INPUT") {
 						l.value = v[i];
