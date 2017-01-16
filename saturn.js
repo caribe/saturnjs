@@ -2,11 +2,13 @@
 
 var sj = new function(endpoint) {
 
+	// General endpoint for client-server interaction
 	this.setEndpoint = function(url) { endpoint = url };
 	this.setRequestWait = function(callback) { onRequestWait = callback };
-	this.setRequestComplete = function(callback) { setRequestComplete = callback };
+	this.setRequestComplete = function(callback) { onRequestComplete = callback };
 	this.setClickCallback = function(callback) { onClickCallback = callback };
 	this.setErrorCallback = function(callback) { onErrorCallback = callback };
+	this.setBeforeActionCallback = function(callback) { onBeforeActionCallback = callback };
 	this.setActionCallback = function(callback) { onActionCallback = callback };
 	this.setBeforeRequestCallback = function(callback) { onBeforeRequestCallback = callback };
 
@@ -45,28 +47,6 @@ var sj = new function(endpoint) {
 		}
 	}
 
-	// Utilities
-	this.hasClass = function(el, c) {
-		return (el.className.search(/\bc\b/) > -1);
-	}
-
-	this.removeClass = function(el, c) {
-		var re = new RegExp("\\b\s*"+c+"\\b");
-		el.className = el.className.replace(re, '').replace(/^\s+|\s$/g, '');
-	}
-
-	this.addClass = function(el, c) {
-		if (!sj.hasClass(el, c)) el.className += " "+c;
-	}
-
-	this.toggleClass = function(el, c) {
-		if (sj.hasClass(el, c)) {
-			sj.addClass(el, c);
-		} else {
-			sj.removeClass(el, c);
-		}
-	}
-
 	var componentClass = function(id, obj) {
 
 		this.oncreate = function() {}
@@ -74,19 +54,12 @@ var sj = new function(endpoint) {
 		this.onpostshow = function() {}
 		this.onprehide = function() {}
 		this.onhide = function() {}
-		this.onclick = function(ev, target) {}
-		this.onaction = function(ev, target) {
-			onActionCallback(ev, this.el, target);
-		}
-		this.onsubmit = function(ev, target) {
-			onSubmitCallback(ev, this.el, target);
-		}
+		this.onclick = function(ev, target) { onClickCallback(ev, this.el, target) }
+		this.onaction = function(action, target) { onActionCallback(action, target,this) }
+		this.onsubmit = function(ev, target) { onSubmitCallback(ev, this.el, target) }
 		this.onrequest = function() {}
 		this.onresponse = function() {}
-		this.onerror = function(json) {
-			if (onSubmitCallback) onErrorCallback(json);
-			else console.error(json);
-		}
+		this.onerror = function(json) { onErrorCallback(json) }
 
 		this.hide = function() {
 			this.onprehide();
@@ -101,11 +74,6 @@ var sj = new function(endpoint) {
 		this.visible = function(b) {
 			if (b) this.show(); else this.hide();
 		}
-
-		this.hasClass = function(c) { return hasClass(this.el, c) }
-		this.removeClass = function(c) { return removeClass(this.el, c) }
-		this.addClass = function(c) { return addClass(this.el, c) }
-		this.toggleClass = function(c) { return toggleClass(this.el, c) }
 
 		this.action = function(q) {
 			sj.request(q);
@@ -141,6 +109,7 @@ var sj = new function(endpoint) {
 			if (this.onrender) this.onrender();
 		}
 
+		this.id = id;
 		this.el = document.getElementById(id);
 		if (!this.el) throw "Component `"+id+"` not found";
 		this.el.setAttribute("data-component", "");
@@ -236,7 +205,16 @@ var sj = new function(endpoint) {
 				components[id].onrequest(ev, target);
 				sj.request(target.hash);
 				ev.preventDefault();
+			} else if (target.hash.search(/^#![\w-]+\//) > -1) {
+				onBeforeActionCallback(target.hash);
+				var m = target.hash.substring(2).split(/\//, 2);
+				var res = components[m[0]].onaction(m[1], target);
+				if (typeof res == "undefined" || res === false) {
+					onActionCallback(m[1], target, components[m[0]]);
+				}
+				ev.preventDefault();
 			} else if (target.hash.search(/^#!/) > -1) {
+				onBeforeActionCallback(target.hash);
 				components[id].onaction(target.hash.substring(2), target);
 				ev.preventDefault();
 			}
@@ -268,7 +246,7 @@ var sj = new function(endpoint) {
 				throw "Component `"+json.component+"` not found";
 			}
 			if (onRequestComplete) onRequestComplete();
-			sj.removeClass(document.body, "wait");
+			document.body.classList.remove("wait");
 		}, false);
 		xhr.addEventListener("error", function(ev) {
 			console.error(ev.message, ev);
@@ -297,14 +275,23 @@ var sj = new function(endpoint) {
 	var components = {};
 	var containers = {};
 
-	var onBeforeRequestCallback = null;
-	var onRequestWait = null;
-	var onRequestComplete = null;
+	// Called before request to server is executed. Useful to add common params or to log history
+	var onBeforeRequestCallback = function() {};
+	// Called when request is executed. Useful to show spinner.
+	var onRequestWait = function() {};
+	// Called when request is completed. Useful to hide spinner.
+	var onRequestComplete = function() {};
 
-	var onActionCallback = null;
-	var onClickCallback = null;
-	var onSubmitCallback = null;
-	var onErrorCallback = null;
+	// Called before the onAction slot is called. Useful to log history.
+	var onBeforeActionCallback = function() {};
+	// Called when Component does not override his onAction slot.
+	var onActionCallback = function() {};
+	// Called when Component does not override his onClick slot.
+	var onClickCallback = function() {};
+	// Called when Component does not override his onSubmit slot.
+	var onSubmitCallback = function() {};
+	// Called when Component does not override his onError slot.
+	var onErrorCallback = function(json) { console.error(json) };
 
 	document.addEventListener('DOMContentLoaded', function() {
 		document.body.addEventListener("click", onaction, false);
