@@ -201,34 +201,33 @@ var sj = new function(endpoint) {
 
 		while (target.tagName != "A" && target.tagName != "FORM" && target != el) target = target.parentNode;
 		if (target.tagName == "A") {
-			if (target.hash.search(/^#\?/) > -1) {
-				components[id].onrequest(ev, target);
-				sj.request(target.hash);
-				ev.preventDefault();
-			} else if (target.hash.search(/^#!/) > -1) {
-				var params = {}, ps = target.hash.substring(2).split(/[&=]/);
-				for (var i = 0; i < ps.length; i+=2) {
-					params[ps[i]] = ps[i+1];
-				}
-				onBeforeActionCallback(params);
-				var res = components[params.do].onaction(params);
-				if (typeof res == "undefined" || res === false) {
-					onActionCallback(params);
-				}
-				ev.preventDefault();
-			}
+			sj.call(target.hash);
+			ev.preventDefault();
 		} else if (target.tagName == "FORM" && ev.type == 'submit') {
-			if (target.action.search(/#\?/) > -1) {
-				components[id].onrequest(ev, target);
-				sj.request(target.action, target);
-				ev.preventDefault();
-			} else if (target.action.search(/#!/) > -1) {
-				var p = target.action.search(/#!/);
-				components[id].onaction(parseHash(target.action), target);
-				ev.preventDefault();
-			}
+			var hash = target.action;
+			var n = hash.search(/#[!\?]/);
+			if (n > -1) hash = hash.substring(n);
+			sj.call(hash, target);
+			ev.preventDefault();
 		} else {
 			components[id].onclick(ev, target);
+		}
+	}
+
+	this.call = function(query, form) {
+		var params = {}, ps = query.substring(2).split(/[&=]/);
+		for (var i = 0; i < ps.length; i+=2) params[ps[i]] = ps[i+1];
+		var mode = query.substring(0, 2);
+
+		if (mode == "#?") {
+			components[params.do].onrequest(params);
+			sj.request(query, form);
+		} else if (mode == "#!") {
+			onBeforeActionCallback(params);
+			var res = components[params.do].onaction(params, form);
+			if (typeof res == "undefined" || res === false) {
+				onActionCallback(params);
+			}
 		}
 	}
 
