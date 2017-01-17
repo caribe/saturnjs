@@ -205,17 +205,16 @@ var sj = new function(endpoint) {
 				components[id].onrequest(ev, target);
 				sj.request(target.hash);
 				ev.preventDefault();
-			} else if (target.hash.search(/^#![\w-]+\//) > -1) {
-				onBeforeActionCallback(target.hash);
-				var m = target.hash.substring(2).split(/\//, 2);
-				var res = components[m[0]].onaction(m[1], target);
-				if (typeof res == "undefined" || res === false) {
-					onActionCallback(m[1], target, components[m[0]]);
-				}
-				ev.preventDefault();
 			} else if (target.hash.search(/^#!/) > -1) {
-				onBeforeActionCallback(target.hash);
-				components[id].onaction(target.hash.substring(2), target);
+				var params = {}, ps = target.hash.substring(2).split(/[&=]/);
+				for (var i = 0; i < ps.length; i+=2) {
+					params[ps[i]] = ps[i+1];
+				}
+				onBeforeActionCallback(params);
+				var res = components[params.do].onaction(params);
+				if (typeof res == "undefined" || res === false) {
+					onActionCallback(params);
+				}
 				ev.preventDefault();
 			}
 		} else if (target.tagName == "FORM" && ev.type == 'submit') {
@@ -241,7 +240,7 @@ var sj = new function(endpoint) {
 			if (json.error) {
 				components[json.component].onerror(json);
 			} else if (json.component && components[json.component]) {
-				components[json.component].onresponse(json);
+				components[json.component].onaction(json);
 			} else {
 				throw "Component `"+json.component+"` not found";
 			}
@@ -249,6 +248,7 @@ var sj = new function(endpoint) {
 			document.body.classList.remove("wait");
 		}, false);
 		xhr.addEventListener("error", function(ev) {
+			onErrorCallback(ev);
 			console.error(ev.message, ev);
 		}, false);
 
