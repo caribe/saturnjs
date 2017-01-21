@@ -10,6 +10,7 @@ var sj = new function(endpoint) {
 	this.setErrorCallback = function(callback) { onErrorCallback = callback };
 	this.setBeforeActionCallback = function(callback) { onBeforeActionCallback = callback };
 	this.setActionCallback = function(callback) { onActionCallback = callback };
+	this.setActionFallback = function(callback) { onActionFallback = callback };
 	this.setBeforeRequestCallback = function(callback) { onBeforeRequestCallback = callback };
 
 	// Render function
@@ -195,13 +196,16 @@ var sj = new function(endpoint) {
 		var el = ev.target;
 		if (!el) return;
 		while (!el.hasAttribute("data-component") && el != document.body) el = el.parentNode;
-		if (el == document.body) return;
+		if (el == document.body) {
+			onActionFallback(el);
+			return;
+		}
 		var id = el.id;
 		var target = ev.target;
 
 		while (target.tagName != "A" && target.tagName != "FORM" && target != el) target = target.parentNode;
 		if (target.tagName == "A") {
-			sj.call(target.hash);
+			sj.call(target.hash, target);
 			ev.preventDefault();
 		} else if (target.tagName == "FORM" && ev.type == 'submit') {
 			var hash = target.action;
@@ -214,17 +218,17 @@ var sj = new function(endpoint) {
 		}
 	}
 
-	this.call = function(query, form) {
+	this.call = function(query, element) {
 		var params = {}, ps = query.substring(2).split(/[&=]/);
 		for (var i = 0; i < ps.length; i+=2) params[ps[i]] = ps[i+1];
 		var mode = query.substring(0, 2);
 
 		if (mode == "#?") {
-			components[params.do].onrequest(params);
-			sj.request(query, form);
+			components[params.do].onrequest(params, element);
+			sj.request(query, element);
 		} else if (mode == "#!") {
 			onBeforeActionCallback(params);
-			var res = components[params.do].onaction(params, form);
+			var res = components[params.do].onaction(params, element);
 			if (typeof res == "undefined" || res === false) {
 				onActionCallback(params);
 			}
@@ -257,7 +261,7 @@ var sj = new function(endpoint) {
 		if (onBeforeRequestCallback) onBeforeRequestCallback(q);
 		var url = endpoint+"?"+q.join("&");
 
-		if (form) {
+		if (form && form.tagName == "FORM") {
 			if (!(form instanceof FormData)) form = new FormData(form);
 			xhr.open('POST', url);
 			xhr.send(form);
@@ -285,6 +289,8 @@ var sj = new function(endpoint) {
 	var onBeforeActionCallback = function() {};
 	// Called when Component does not override his onAction slot.
 	var onActionCallback = function() {};
+	// Called when no action Component is defined
+	var onActionFallback = function() {};
 	// Called when Component does not override his onClick slot.
 	var onClickCallback = function() {};
 	// Called when Component does not override his onSubmit slot.
