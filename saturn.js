@@ -227,7 +227,10 @@ var sj = new function(endpoint) {
 			components[params.do].onrequest(params, element);
 			sj.request(query, element);
 		} else if (mode == "#!") {
+			if (!params.action) params.action = "action";
+			if (!params.method) params.method = "internal";
 			onBeforeActionCallback(params);
+			params.identry = params.method+"/"+params.action;
 			var res = components[params.do].onaction(params, element);
 			if (typeof res == "undefined" || res === false) {
 				onActionCallback(params);
@@ -240,6 +243,9 @@ var sj = new function(endpoint) {
 		var xhr = new XMLHttpRequest();
 		xhr.addEventListener("load", function(ev) {
 			var json = JSON.parse(ev.target.responseText);
+			if (!json.action) json.action = "action";
+			if (!json.method) json.method = "internal";
+			json.identry = json.method+"/"+json.action;
 			if (json.error) {
 				components[json.component].onerror(json);
 			} else if (json.component && components[json.component]) {
