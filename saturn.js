@@ -245,11 +245,15 @@ var sj = new function(endpoint) {
 			var json = JSON.parse(ev.target.responseText);
 			if (!json.action) json.action = "action";
 			if (!json.method) json.method = "internal";
+			if (!json.do) json.do = json.component;
 			json.identry = json.method+"/"+json.action;
 			if (json.error) {
 				components[json.component].onerror(json);
 			} else if (json.component && components[json.component]) {
-				components[json.component].onaction(json);
+				var res = components[json.component].onaction(json);
+				if (typeof res == "undefined" || res === false) {
+					onDefaultAction(json);
+				}
 			} else {
 				throw "Component `"+json.component+"` not found";
 			}
