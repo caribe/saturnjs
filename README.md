@@ -1,13 +1,7 @@
 # SaturnJs
-Minimal and easy to use single-page-application framework
 
-The project is in a early stage of development, so use it on your own risk.
+A minimal and easy to learn javascript library to build single-page-applications quickly,
+easily integrate it with other libraries and avoid a lot of headaches.
 
-#? Request call
-#! Method call
-#@ Action call
-
-Generic Component action call:
-
-do = name of called Component
-action = name of called Component action
+Check out the Wiki
+https://github.com/caribe/saturnjs/wiki
