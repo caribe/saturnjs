@@ -92,7 +92,7 @@ var sj = new function(endpoint) {
 			}
 			if (!el) el = this.el;
 			for (var i in p) {
-				var l = el.querySelector("[name="+i+"]");
+				var l = (i == "_" ? el : el.querySelector("[name="+i+"]"));
 				if (p[i] instanceof Array) {
 					while (!l.lastElementChild.hidden) l.removeChild(l.lastElementChild);
 					for (var j = 0; j < p[i].length; j++) {
