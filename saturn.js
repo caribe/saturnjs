@@ -229,8 +229,8 @@ var sj = new function(endpoint) {
 		} else if (mode == "#!") {
 			if (!params.action) params.action = "action";
 			if (!params.method) params.method = "internal";
-			onBeforeAction(params);
 			params.identry = params.method+"/"+params.action;
+			onBeforeAction(params);
 			var res = components[params.do].onaction(params, element);
 			if (typeof res == "undefined" || res === false) {
 				onDefaultAction(params);
@@ -242,7 +242,12 @@ var sj = new function(endpoint) {
 		if (!endpoint) throw "No endpoint defined!";
 		var xhr = new XMLHttpRequest();
 		xhr.addEventListener("load", function(ev) {
-			var json = JSON.parse(ev.target.responseText);
+			try {
+				var json = JSON.parse(ev.target.responseText);
+			} catch (e) {
+				console.debug(ev.target.responseText);
+				return;
+			}
 			if (!json.action) json.action = "action";
 			if (!json.method) json.method = "internal";
 			if (!json.do) json.do = json.component;
@@ -250,6 +255,7 @@ var sj = new function(endpoint) {
 			if (json.error) {
 				components[json.component].onerror(json);
 			} else if (json.component && components[json.component]) {
+				onBeforeAction(json);
 				var res = components[json.component].onaction(json);
 				if (typeof res == "undefined" || res === false) {
 					onDefaultAction(json);
@@ -266,15 +272,39 @@ var sj = new function(endpoint) {
 		}, false);
 
 		if (typeof query == "string") query = parseHash(query);
+		if (onBeforeRequest) onBeforeRequest(query, form);
 		var q = [];
 		for (var i in query) q.push(i+"="+encodeURIComponent(query[i]));
-		if (onBeforeRequest) onBeforeRequest(q);
 		var url = endpoint+"?"+q.join("&");
 
 		if (form && form.tagName == "FORM") {
-			if (!(form instanceof FormData)) form = new FormData(form);
-			xhr.open('POST', url);
-			xhr.send(form);
+			if (form.method == "post") {
+				if (!(form instanceof FormData)) form = new FormData(form);
+				xhr.open('POST', url);
+				xhr.send(form);
+			} else {
+				var p = [];
+				for (var i = 0; i < form.elements.length; i++) {
+					var el = form.elements[i];
+					if (el.hasAttribute("name")) {
+						switch (el.type) {
+							case "select":
+								p.push(el.name+"="+el.options[el.selectedIndex].value);
+								break;
+							case "checkbox":
+								// TODO
+								break;
+							case "radio":
+								// TODO
+								break;
+							default:
+								p.push(el.name+"="+encodeURIComponent(el.value));
+						}
+					}
+				}
+				xhr.open('GET', url+"&"+p.join("&"));
+				xhr.send();
+			}
 		} else {
 			xhr.open('GET', url);
 			xhr.send();
