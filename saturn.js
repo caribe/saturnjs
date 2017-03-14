@@ -37,12 +37,18 @@ var sj = new function(endpoint) {
 					}
 				} else if (i == "style") {
 					for (var j in v[i]) l.style[j] = v[i][j];
+				} else if (i == "visible") {
+					l.hidden = !v[i];
+				} else if (i == "hidden") {
+					l.hidden = v[i];
+				} else if (i == "className") {
+					l.className = v[i];
 				} else if (v[i] === false) {
 					l.removeAttribute(i);
 				} else if (v[i] === true) {
 					l.setAttribute(i, "");
 				} else {
-					l.setAttribute((i == "className" ? "class" : i), v[i]);
+					l.setAttribute(i, v[i]);
 				}
 			}
 		}
