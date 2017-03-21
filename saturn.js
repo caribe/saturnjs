@@ -227,16 +227,17 @@ var sj = new function(endpoint) {
 	this.call = function(query, element) {
 		var params = {}, ps = query.substring(2).split(/[&=]/);
 		for (var i = 0; i < ps.length; i+=2) params[ps[i]] = ps[i+1];
-		var mode = query.substring(0, 2);
+		params.mode = query.substring(0, 2);
 
-		if (mode == "#?") {
+		onBeforeAction(params);
+
+		if (params.mode == "#?") {
 			components[params.do].onrequest(params, element);
 			sj.request(query, element);
-		} else if (mode == "#!") {
+		} else if (params.mode == "#!") {
 			if (!params.action) params.action = "action";
 			if (!params.method) params.method = "internal";
 			params.identry = params.method+"/"+params.action;
-			onBeforeAction(params);
 			var res = components[params.do].onaction(params, element);
 			if (typeof res == "undefined" || res === false) {
 				onDefaultAction(params);
