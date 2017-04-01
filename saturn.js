@@ -200,7 +200,7 @@ var sj = new function(endpoint) {
 
 	function onaction(ev) {
 		var el = ev.target;
-		if (!el) return;
+		if (!el || el.hasAttribute("target")) return;
 		while (!el.hasAttribute("data-component") && el != document.body) el = el.parentNode;
 		if (el == document.body) {
 			onFallbackAction(el);
