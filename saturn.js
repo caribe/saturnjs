@@ -284,9 +284,12 @@ var sj = new function(endpoint) {
 		for (var i in query) q.push(i+"="+encodeURIComponent(query[i]));
 		var url = endpoint+"?"+q.join("&");
 
-		if (form && form.tagName == "FORM") {
-			if (form.method == "post") {
-				if (!(form instanceof FormData)) form = new FormData(form);
+		if (form && (form.tagName == "FORM" || form instanceof FormData)) {
+			if (form instanceof FormData) {
+				xhr.open('POST', url);
+				xhr.send(form);
+			} else if (form.method == "post") {
+				form = new FormData(form);
 				xhr.open('POST', url);
 				xhr.send(form);
 			} else {
