@@ -220,7 +220,7 @@ var sj = new function(endpoint) {
 			sj.call(hash, target);
 			ev.preventDefault();
 		} else {
-			components[id].onclick(ev, target);
+			onFallbackAction(el);
 		}
 	}
 
