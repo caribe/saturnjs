@@ -25,7 +25,7 @@ var sj = new function(endpoint) {
 			for (j = 0; j < list.length; j++) {
 				var l = list[j];
 				if (i == "_") {
-					if (l.tagName == "INPUT" && l.type == "radio") {
+					if (l.tagName == "INPUT" && (l.type == "radio" || l.type == "checkbox")) {
 						l.checked = (l.value == v[i]);
 					} else if (l.tagName == "INPUT") {
 						l.value = v[i];
@@ -62,7 +62,14 @@ var sj = new function(endpoint) {
 		this.onprehide = function() {}
 		this.onhide = function() {}
 		this.onclick = function(ev, target) { onClickCallback(ev, this.el, target) }
-		this.onaction = function(action, target) { return onDefaultAction(action, target, this); }
+		this.onaction = function(action, target) {
+			if (this[action.identry]) {
+				this[action.identry](action, target, this);
+				return true;
+			} else {
+				return onDefaultAction(action, target, this);
+			}
+		}
 		this.onsubmit = function(ev, target) { onSubmitCallback(ev, this.el, target) }
 		this.onrequest = function() {}
 		this.onresponse = function() {}
@@ -188,14 +195,17 @@ var sj = new function(endpoint) {
 	}
 
 	function parseHash(hash) {
-		var q = {};
+		var q = {}, method;
 
-		var n = hash.search(/#[!\?]/);
-		if (n > -1) hash = hash.substring(n+2);
+		var n = hash.search(/#[!\?>]/);
+		if (n > -1) {
+			hash = hash.substring(n+2);
+			method = hash.substring(1, 1);
+		}
 
 		var p = hash.split(/[&=]/);
 		for (var i = 0; i < p.length; i+=2) q[p[i]] = (p[i+1] ? p[i+1] : null);
-		return q;
+		return { q: q, m: method };
 	}
 
 	function onaction(ev) {
@@ -229,15 +239,15 @@ var sj = new function(endpoint) {
 		for (var i = 0; i < ps.length; i+=2) params[ps[i]] = ps[i+1];
 		params.mode = query.substring(0, 2);
 
-		onBeforeAction(params);
-
 		if (params.mode == "#?") {
 			components[params.do].onrequest(params, element);
 			sj.request(query, element);
 		} else if (params.mode == "#!") {
 			if (!params.action) params.action = "action";
-			if (!params.method) params.method = "internal";
+			params.method = "internal"
 			params.identry = params.method+"/"+params.action;
+			params.params = {};
+			onBeforeAction(params);
 			var res = components[params.do].onaction(params, element);
 			if (typeof res == "undefined" || res === false) {
 				onDefaultAction(params);
@@ -279,9 +289,9 @@ var sj = new function(endpoint) {
 		}, false);
 
 		if (typeof query == "string") query = parseHash(query);
-		if (onBeforeRequest) onBeforeRequest(query, form);
+		if (onBeforeRequest) onBeforeRequest(query.q, form);
 		var q = [];
-		for (var i in query) q.push(i+"="+encodeURIComponent(query[i]));
+		for (var i in query.q) q.push(i+"="+encodeURIComponent(query.q[i]));
 		var url = endpoint+"?"+q.join("&");
 
 		if (form && (form.tagName == "FORM" || form instanceof FormData)) {
@@ -316,7 +326,11 @@ var sj = new function(endpoint) {
 				xhr.send();
 			}
 		} else {
-			xhr.open('GET', url);
+			if (query.m == '>') {
+				xhr.open('PUT', url);
+			} else {
+				xhr.open('GET', url);
+			}
 			xhr.send();
 		}
 
