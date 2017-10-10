@@ -16,7 +16,7 @@ var sj = new function(endpoint) {
 	// Render function
 	function renderSingle(el, k, v) {
 		if (!loaded || !el) return;
-		var list = k == "_" ? [el] : el.querySelectorAll("[name="+k+"]");
+		var list = k == "_" ? [el] : el.querySelectorAll("[data-id="+k+"]");
 		if (!list.length) return console.error("Element not found", el, k, v);
 		if (typeof v == "string" || typeof v == "number") v = { _: v };
 		else if (typeof v == "boolean") v = { hidden: !v };
@@ -97,7 +97,7 @@ var sj = new function(endpoint) {
 			var el;
 			if (!p || typeof p != "object") return;
 			if (typeof sub == "string") {
-				el = this.el.querySelector("[name="+sub+"]");
+				el = this.el.querySelector("[data-id="+sub+"]");
 			} else if (typeof sub == "object") {
 				var t = sub;
 				while (t != document.body && t != this.el) t = t.parentNode;
@@ -105,7 +105,7 @@ var sj = new function(endpoint) {
 			}
 			if (!el) el = this.el;
 			for (var i in p) {
-				var l = (i == "_" ? el : el.querySelector("[name="+i+"]"));
+				var l = (i == "_" ? el : el.querySelector("[data-id="+i+"]"));
 				if (p[i] instanceof Array) {
 					while (!l.lastElementChild.hidden) l.removeChild(l.lastElementChild);
 					for (var j = 0; j < p[i].length; j++) {
