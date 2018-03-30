@@ -14,44 +14,60 @@ var sj = new function(endpoint) {
 	this.setBeforeRequest = function(callback) { onBeforeRequest = callback };
 
 	// Render function
-	function renderSingle(el, k, v) {
-		if (!loaded || !el) return;
-		var list = k == "_" ? [el] : el.querySelectorAll("[data-id="+k+"]");
-		if (!list.length) return console.error("Element not found", el, k, v);
-		if (typeof v == "string" || typeof v == "number") v = { _: v };
-		else if (typeof v == "boolean") v = { hidden: !v };
+	function renderSingle(el, p, opt) {
+		for (var k in p) {
+			var a = p[k];
+			if (typeof a == "string" || typeof a == "number") a = { _: a };
+			else if (typeof a == "boolean") a = { hidden: !a };
 
-		for (var i in v) {
-			for (j = 0; j < list.length; j++) {
-				var l = list[j];
-				if (i == "_") {
-					if (l.tagName == "INPUT" && (l.type == "radio" || l.type == "checkbox")) {
-						l.checked = (l.value == v[i]);
-					} else if (l.tagName == "INPUT") {
-						l.value = v[i];
-					} else if (l.hasAttribute('data-html')) {
-						l.innerHTML = v[i];
-					} else {
-						l.innerHTML = "";
-						l.appendChild(document.createTextNode(v[i]));
-					}
-				} else if (i == "style") {
-					for (var j in v[i]) l.style[j] = v[i][j];
-				} else if (i == "visible") {
-					l.hidden = !v[i];
-				} else if (i == "hidden") {
-					l.hidden = v[i];
-				} else if (i == "className") {
-					l.className = v[i];
-				} else if (v[i] === false) {
-					l.removeAttribute(i);
-				} else if (v[i] === true) {
-					l.setAttribute(i, "");
+			var list = k == "_" ? [el] : el.querySelectorAll("[data-id="+k+"]");
+			if (!list.length) throw "Element "+k+" not found";
+
+			list.forEach(function(l) {
+				if (a instanceof Array) {
+					renderArray(l, a, opt);
 				} else {
-					l.setAttribute(i, v[i]);
+					for (var i in a) {
+						if (i == "_") {
+							if (l.tagName == "INPUT" && (l.type == "radio" || l.type == "checkbox")) {
+								l.checked = (l.value == a[i]);
+							} else if (l.tagName == "INPUT") {
+								l.value = a[i];
+							} else if (l.hasAttribute('data-html')) {
+								l.innerHTML = a[i];
+							} else {
+								l.innerHTML = "";
+								l.appendChild(document.createTextNode(a[i]));
+							}
+						} else if (i == "style") {
+							for (var j in a[i]) l.style[j] = a[i][j];
+						} else if (i == "visible") {
+							l.hidden = !a[i];
+						} else if (i == "hidden") {
+							l.hidden = a[i];
+						} else if (i == "className") {
+							l.className = a[i];
+						} else if (a[i] === false) {
+							l.removeAttribute(i);
+						} else if (a[i] === true) {
+							l.setAttribute(i, "");
+						} else {
+							l.setAttribute(i, a[i]);
+						}
+					}
 				}
-			}
+			});
 		}
+	}
+
+	function renderArray(el, p, opt) {
+		if (!opt.append) while (!el.lastElementChild.hidden) el.removeChild(el.lastElementChild);
+		p.forEach(function(i) {
+			var clone = el.firstElementChild.cloneNode(true);
+			clone.hidden = false;
+			renderSingle(clone, i, opt);
+			el.appendChild(clone);
+		});
 	}
 
 	var componentClass = function(id, obj) {
@@ -93,33 +109,28 @@ var sj = new function(endpoint) {
 			sj.request(q);
 		},
 
-		this.render = function(p, sub) {
+		this.render = function(p, opt) {
+			if (!loaded || !p || typeof p != "object") return;
+			if (!opt) opt = {};
+
 			var el;
-			if (!p || typeof p != "object") return;
-			if (typeof sub == "string") {
-				el = this.el.querySelector("[data-id="+sub+"]");
-			} else if (typeof sub == "object") {
-				var t = sub;
+			if (!opt.sub) {
+				el = this.el;
+			} else if (typeof opt.sub == "string") {
+				el = this.el.querySelector("[data-id="+opt.sub+"]");
+			} else if (typeof opt.sub == "object") {
+				var t = opt.sub;
 				while (t != document.body && t != this.el) t = t.parentNode;
-				el = (t == this.el) ? t : null;
-			}
-			if (!el) el = this.el;
-			for (var i in p) {
-				var l = (i == "_" ? el : el.querySelector("[data-id="+i+"]"));
-				if (p[i] instanceof Array) {
-					while (!l.lastElementChild.hidden) l.removeChild(l.lastElementChild);
-					for (var j = 0; j < p[i].length; j++) {
-						var clone = l.firstElementChild.cloneNode(true);
-						clone.hidden = false;
-						for (var k in p[i][j]) {
-							renderSingle(clone, k, p[i][j][k]);
-						}
-						l.appendChild(clone);
-					}
+				if (t == this.el) {
+					el = opt.sub;
 				} else {
-					renderSingle(el, i, p[i]);
+					throw "Element outside the Component";
 				}
 			}
+			if (!el) throw "Root element not found";
+
+			renderSingle(el, p, opt);
+
 			if (this.onrender) this.onrender();
 		}
 
@@ -294,6 +305,7 @@ var sj = new function(endpoint) {
 		for (var i in query.q) q.push(i+"="+encodeURIComponent(query.q[i]));
 		var url = endpoint+"?"+q.join("&");
 
+		xhr.withCredentials = true;
 		if (form && (form.tagName == "FORM" || form instanceof FormData)) {
 			if (form instanceof FormData) {
 				xhr.open('POST', url);
