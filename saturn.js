@@ -14,6 +14,7 @@ var sj = new function(endpoint) {
 	this.setBeforeRequest = function(callback) { onBeforeRequest = callback };
 
 	// Render function
+	// p = { k: { dataid: v } }
 	function renderSingle(el, p, opt) {
 		for (var k in p) {
 			var a = p[k];
@@ -21,11 +22,13 @@ var sj = new function(endpoint) {
 			else if (typeof a == "boolean") a = { hidden: !a };
 
 			var list = k == "_" ? [el] : el.querySelectorAll("[data-id="+k+"]");
-			if (!list.length) throw "Element "+k+" not found";
+			if (!list.length) throw "Element `"+k+"` not found";
 
 			list.forEach(function(l) {
 				if (a instanceof Array) {
 					renderArray(l, a, opt);
+				} else if (a instanceof HTMLElement) {
+					l.parentNode.replaceChild(a, l);
 				} else {
 					for (var i in a) {
 						if (i == "_") {
@@ -41,12 +44,25 @@ var sj = new function(endpoint) {
 							}
 						} else if (i == "style") {
 							for (var j in a[i]) l.style[j] = a[i][j];
+						} else if (i == "data") {
+							for (var j in a[i]) l.dataset[j] = a[i][j];
 						} else if (i == "visible") {
 							l.hidden = !a[i];
 						} else if (i == "hidden") {
 							l.hidden = a[i];
 						} else if (i == "className") {
 							l.className = a[i];
+						} else if (i == "classList") {
+							if (a[i] instanceof Array == false) a[i] = [a[i]];
+							for (var j in a[i]) {
+								if (a[i][j][0] == "-") {
+									l.classList.remove(a[i][j].substring(1));
+								} else if (a[i][j][0] == "+") {
+									l.classList.add(a[i][j].substring(1));
+								} else {
+									l.classList.toggle(a[i][j]);
+								}
+							}
 						} else if (a[i] === false) {
 							l.removeAttribute(i);
 						} else if (a[i] === true) {
@@ -63,10 +79,14 @@ var sj = new function(endpoint) {
 	function renderArray(el, p, opt) {
 		if (!opt.append) while (!el.lastElementChild.hidden) el.removeChild(el.lastElementChild);
 		p.forEach(function(i) {
-			var clone = el.firstElementChild.cloneNode(true);
-			clone.hidden = false;
-			renderSingle(clone, i, opt);
-			el.appendChild(clone);
+			if (i instanceof HTMLElement) {
+				el.appendChild(i);
+			} else {
+				var clone = el.firstElementChild.cloneNode(true);
+				clone.hidden = false;
+				renderSingle(clone, i, opt);
+				el.appendChild(clone);
+			}
 		});
 	}
 
@@ -241,7 +261,7 @@ var sj = new function(endpoint) {
 			sj.call(hash, target);
 			ev.preventDefault();
 		} else {
-			onFallbackAction(el);
+			onFallbackAction(el, ev);
 		}
 	}
 
