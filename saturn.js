@@ -250,8 +250,8 @@ var sj = new function(endpoint) {
 		var id = el.id;
 		var target = ev.target;
 
-		while (target.tagName != "A" && target.tagName != "FORM" && target != el) target = target.parentNode;
-		if (target.tagName == "A") {
+		while (target.tagName != "A" && target.tagName != "AREA" && target.tagName != "FORM" && target != el) target = target.parentNode;
+		if (target.tagName == "A" || target.tagName == "AREA") {
 			sj.call(target.hash, target);
 			ev.preventDefault();
 		} else if (target.tagName == "FORM" && ev.type == 'submit') {
