@@ -36,6 +36,8 @@ var sj = new function(endpoint) {
 								l.checked = (l.value == a[i]);
 							} else if (l.tagName == "INPUT") {
 								l.value = a[i];
+							} else if (l.tagName == "SELECT") {
+								for (var j = 0; j < l.options.length; j++) l.options[j].selected = (l.options[j].value == a[i]);
 							} else if (l.hasAttribute('data-html')) {
 								l.innerHTML = a[i];
 							} else {
