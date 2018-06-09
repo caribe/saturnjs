@@ -21,7 +21,7 @@ var sj = new function(endpoint) {
 			if (typeof a == "string" || typeof a == "number") a = { _: a };
 			else if (typeof a == "boolean") a = { hidden: !a };
 
-			var list = k == "_" ? [el] : el.querySelectorAll("[data-id="+k+"]");
+			var list = k == "_" ? [el] : Array.from(el.querySelectorAll("[data-id="+k+"]"));
 			if (!list.length) throw "Element `"+k+"` not found";
 
 			list.forEach(function(l) {
