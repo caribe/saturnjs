@@ -34,7 +34,7 @@ var sj = new function(endpoint) {
 						if (i == "_") {
 							if (l.tagName == "INPUT" && (l.type == "radio" || l.type == "checkbox")) {
 								l.checked = (l.value == a[i]);
-							} else if (l.tagName == "INPUT") {
+							} else if (l.tagName == "INPUT" || l.tagName == "TEXTAREA") {
 								l.value = a[i];
 							} else if (l.tagName == "SELECT") {
 								for (var j = 0; j < l.options.length; j++) l.options[j].selected = (l.options[j].value == a[i]);
