@@ -57,6 +57,7 @@ var sj = new function(endpoint) {
 						} else if (i == "classList") {
 							if (a[i] instanceof Array == false) a[i] = [a[i]];
 							for (var j in a[i]) {
+								if (!a[i][j]) continue;
 								if (a[i][j][0] == "-") {
 									l.classList.remove(a[i][j].substring(1));
 								} else if (a[i][j][0] == "+") {
