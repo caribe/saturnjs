@@ -34,8 +34,10 @@ var sj = new function(endpoint) {
 						if (i == "_") {
 							if (l.tagName == "INPUT" && (l.type == "radio" || l.type == "checkbox")) {
 								l.checked = (l.value == a[i]);
-							} else if (l.tagName == "INPUT") {
+							} else if (l.tagName == "INPUT" || l.tagName == "TEXTAREA") {
 								l.value = a[i];
+							} else if (l.tagName == "SELECT") {
+								for (var j = 0; j < l.options.length; j++) l.options[j].selected = (l.options[j].value == a[i]);
 							} else if (l.hasAttribute('data-html')) {
 								l.innerHTML = a[i];
 							} else {
@@ -55,6 +57,7 @@ var sj = new function(endpoint) {
 						} else if (i == "classList") {
 							if (a[i] instanceof Array == false) a[i] = [a[i]];
 							for (var j in a[i]) {
+								if (!a[i][j]) continue;
 								if (a[i][j][0] == "-") {
 									l.classList.remove(a[i][j].substring(1));
 								} else if (a[i][j][0] == "+") {
@@ -250,8 +253,8 @@ var sj = new function(endpoint) {
 		var id = el.id;
 		var target = ev.target;
 
-		while (target.tagName != "A" && target.tagName != "FORM" && target != el) target = target.parentNode;
-		if (target.tagName == "A") {
+		while (target.tagName != "A" && target.tagName != "AREA" && target.tagName != "FORM" && target != el) target = target.parentNode;
+		if (target.tagName == "A" || target.tagName == "AREA") {
 			sj.call(target.hash, target);
 			ev.preventDefault();
 		} else if (target.tagName == "FORM" && ev.type == 'submit') {
