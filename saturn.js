@@ -157,6 +157,10 @@ var sj = new function(endpoint) {
 			if (this.onrender) this.onrender();
 		}
 
+		this.getElement = function(id) {
+			return this.el.querySelector("[data-id="+id+"]");
+		},
+
 		this.id = id;
 		this.el = document.getElementById(id);
 		if (!this.el) throw "Component `"+id+"` not found";
