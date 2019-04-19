@@ -81,6 +81,7 @@ var sj = new function(endpoint) {
 
 	function renderArray(el, p, opt) {
 		if (!opt.append) while (!el.lastElementChild.hidden) el.removeChild(el.lastElementChild);
+		el.hidden = false;
 		p.forEach(function(i) {
 			if (i instanceof HTMLElement) {
 				el.appendChild(i);
