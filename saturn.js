@@ -286,6 +286,7 @@ var sj = new function(endpoint) {
 			params.identry = params.method+"/"+params.action;
 			params.params = {};
 			onBeforeAction(params);
+			if (!components[params.do]) throw "Component `"+params.do+"` not found";
 			var res = components[params.do].onaction(params, element);
 			if (typeof res == "undefined" || res === false) {
 				onDefaultAction(params);
