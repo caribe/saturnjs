@@ -22,7 +22,7 @@ var sj = new function(endpoint) {
 			else if (typeof a == "boolean") a = { hidden: !a };
 
 			var list = k == "_" ? [el] : Array.from(el.querySelectorAll("[data-id="+k+"]"));
-			if (!list.length) throw "Element `"+k+"` not found";
+			if (!list.length) throw "Element `"+el.id+"`.`"+k+"` not found";
 
 			list.forEach(function(l) {
 				if (a instanceof Array) {
@@ -80,7 +80,7 @@ var sj = new function(endpoint) {
 	}
 
 	function renderArray(el, p, opt) {
-		if (!opt.append) while (!el.lastElementChild.hidden) el.removeChild(el.lastElementChild);
+		if (!opt.append && el.lastElementChild) while (!el.lastElementChild.hidden) el.removeChild(el.lastElementChild);
 		el.hidden = false;
 		p.forEach(function(i) {
 			if (i instanceof HTMLElement) {
