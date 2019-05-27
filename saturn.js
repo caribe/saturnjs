@@ -18,61 +18,59 @@ var sj = new function(endpoint) {
 	function renderSingle(el, p, opt) {
 		for (var k in p) {
 			var a = p[k];
-			if (typeof a == "string" || typeof a == "number") a = { _: a };
+			if (typeof a == "string" || typeof a == "number" || a instanceof Array || a instanceof HTMLElement) a = { _: a };
 			else if (typeof a == "boolean") a = { hidden: !a };
 
 			var list = k == "_" ? [el] : Array.from(el.querySelectorAll("[data-id="+k+"]"));
 			if (!list.length) throw "Element `"+el.id+"`.`"+k+"` not found";
 
 			list.forEach(function(l) {
-				if (a instanceof Array) {
-					renderArray(l, a, opt);
-				} else if (a instanceof HTMLElement) {
-					l.parentNode.replaceChild(a, l);
-				} else {
-					for (var i in a) {
-						if (i == "_") {
-							if (l.tagName == "INPUT" && (l.type == "radio" || l.type == "checkbox")) {
-								l.checked = (l.value == a[i]);
-							} else if (l.tagName == "INPUT" || l.tagName == "TEXTAREA") {
-								l.value = a[i];
-							} else if (l.tagName == "SELECT") {
-								for (var j = 0; j < l.options.length; j++) l.options[j].selected = (l.options[j].value == a[i]);
-							} else if (l.hasAttribute('data-html')) {
-								l.innerHTML = a[i];
-							} else {
-								l.innerHTML = "";
-								l.appendChild(document.createTextNode(a[i]));
-							}
-						} else if (i == "style") {
-							for (var j in a[i]) l.style[j] = a[i][j];
-						} else if (i == "data") {
-							for (var j in a[i]) l.dataset[j] = a[i][j];
-						} else if (i == "visible") {
-							l.hidden = !a[i];
-						} else if (i == "hidden") {
-							l.hidden = a[i];
-						} else if (i == "className") {
-							l.className = a[i];
-						} else if (i == "classList") {
-							if (a[i] instanceof Array == false) a[i] = [a[i]];
-							for (var j in a[i]) {
-								if (!a[i][j]) continue;
-								if (a[i][j][0] == "-") {
-									l.classList.remove(a[i][j].substring(1));
-								} else if (a[i][j][0] == "+") {
-									l.classList.add(a[i][j].substring(1));
-								} else {
-									l.classList.toggle(a[i][j]);
-								}
-							}
-						} else if (a[i] === false) {
-							l.removeAttribute(i);
-						} else if (a[i] === true) {
-							l.setAttribute(i, "");
+				for (var i in a) {
+					if (i == "_") {
+						if (a instanceof Array) {
+							renderArray(l, a[i], opt);
+						} else if (a instanceof HTMLElement) {
+							l.parentNode.replaceChild(a[i], l);
+						} else if (l.tagName == "INPUT" && (l.type == "radio" || l.type == "checkbox")) {
+							l.checked = (l.value == a[i]);
+						} else if (l.tagName == "INPUT" || l.tagName == "TEXTAREA") {
+							l.value = a[i];
+						} else if (l.tagName == "SELECT") {
+							for (var j = 0; j < l.options.length; j++) l.options[j].selected = (l.options[j].value == a[i]);
+						} else if (l.hasAttribute('data-html')) {
+							l.innerHTML = a[i];
 						} else {
-							l.setAttribute(i, a[i]);
+							l.innerHTML = "";
+							l.appendChild(document.createTextNode(a[i]));
 						}
+					} else if (i == "style") {
+						for (var j in a[i]) l.style[j] = a[i][j];
+					} else if (i == "data") {
+						for (var j in a[i]) l.dataset[j] = a[i][j];
+					} else if (i == "visible") {
+						l.hidden = !a[i];
+					} else if (i == "hidden") {
+						l.hidden = a[i];
+					} else if (i == "className") {
+						l.className = a[i];
+					} else if (i == "classList") {
+						if (a[i] instanceof Array == false) a[i] = [a[i]];
+						for (var j in a[i]) {
+							if (!a[i][j]) continue;
+							if (a[i][j][0] == "-") {
+								l.classList.remove(a[i][j].substring(1));
+							} else if (a[i][j][0] == "+") {
+								l.classList.add(a[i][j].substring(1));
+							} else {
+								l.classList.toggle(a[i][j]);
+							}
+						}
+					} else if (a[i] === false) {
+						l.removeAttribute(i);
+					} else if (a[i] === true) {
+						l.setAttribute(i, "");
+					} else {
+						l.setAttribute(i, a[i]);
 					}
 				}
 			});
