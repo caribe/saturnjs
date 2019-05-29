@@ -27,9 +27,9 @@ var sj = new function(endpoint) {
 			list.forEach(function(l) {
 				for (var i in a) {
 					if (i == "_") {
-						if (a instanceof Array) {
+						if (a[i] instanceof Array) {
 							renderArray(l, a[i], opt);
-						} else if (a instanceof HTMLElement) {
+						} else if (a[i] instanceof HTMLElement) {
 							l.parentNode.replaceChild(a[i], l);
 						} else if (l.tagName == "INPUT" && (l.type == "radio" || l.type == "checkbox")) {
 							l.checked = (l.value == a[i]);
@@ -78,7 +78,7 @@ var sj = new function(endpoint) {
 	}
 
 	function renderArray(el, p, opt) {
-		if (!opt.append && el.lastElementChild) while (!el.lastElementChild.hidden) el.removeChild(el.lastElementChild);
+		if (!opt.append && el.lastElementChild) while (el.lastElementChild && !el.lastElementChild.hidden) el.removeChild(el.lastElementChild);
 		el.hidden = false;
 		p.forEach(function(i) {
 			if (i instanceof HTMLElement) {
