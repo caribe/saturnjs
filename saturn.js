@@ -300,7 +300,8 @@ var sj = new function(endpoint) {
 			try {
 				var json = JSON.parse(ev.target.responseText);
 			} catch (e) {
-				console.debug(ev.target.responseText);
+				console.error(ev.target.responseText);
+				onRequestError(ev);
 				return;
 			}
 			if (!json.action) json.action = "action";
@@ -322,8 +323,8 @@ var sj = new function(endpoint) {
 			document.body.classList.remove("wait");
 		}, false);
 		xhr.addEventListener("error", function(ev) {
-			onRequestError(ev);
 			console.error(ev.message, ev);
+			onRequestError(ev);
 		}, false);
 
 		if (typeof query == "string") query = parseHash(query);
