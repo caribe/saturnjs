@@ -247,7 +247,7 @@ var sj = new function(endpoint) {
 
 	function onaction(ev) {
 		var el = ev.target;
-		if (!el || el.hasAttribute("target")) return;
+		if (!el || el.hasAttribute("target") || el.hasAttribute("download")) return;
 		while (el && !el.hasAttribute("data-component") && el != document.body) el = el.parentNode;
 		if (!el || el == document.body) {
 			onFallbackAction(el);
