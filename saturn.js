@@ -78,7 +78,7 @@ var sj = new function(endpoint) {
 	}
 
 	function renderArray(el, p, opt) {
-		if (!opt.append && el.lastElementChild) while (el.lastElementChild && !el.lastElementChild.hidden) el.removeChild(el.lastElementChild);
+		if (!opt.append && el.lastElementChild) while (el.children.length > 1) el.removeChild(el.lastElementChild);
 		el.hidden = false;
 		p.forEach(function(i) {
 			if (i instanceof HTMLElement) {
