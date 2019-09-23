@@ -4,14 +4,48 @@ var sj = new function(endpoint) {
 
 	// General endpoint for client-server interaction
 	this.setEndpoint = function(url) { endpoint = url };
-	this.setRequestWait = function(callback) { onRequestWait = callback };
-	this.setRequestComplete = function(callback) { onRequestComplete = callback };
-	this.setClickCallback = function(callback) { onClickCallback = callback };
-	this.setRequestError = function(callback) { onRequestError = callback };
+
+	// *** Hooks *** //
+
+	// Called before request to server is executed. Useful to add common params or to log history
+	var onBeforeRequest = function() {};
 	this.setBeforeAction = function(callback) { onBeforeAction = callback };
-	this.setDefaultAction = function(callback) { onDefaultAction = callback };
-	this.setFallbackAction = function(callback) { onFallbackAction = callback };
+
+	// Called when request is executed. Useful to show spinner.
+	var onRequestWait = function() {};
+	this.setRequestWait = function(callback) { onRequestWait = callback };
+
+	// Called when request is completed. Useful to hide spinner.
+	var onRequestComplete = function() {};
+	this.setRequestComplete = function(callback) { onRequestComplete = callback };
+
+	// Called before a call is done, useful for auto saving.
+	var onUnloadAction = function() {};
+	this.setUnloadAction = function(callback) { onUnloadAction = callback };
+
+	// Called before the onAction slot is called. Useful to log history.
+	var onBeforeAction = function() {};
 	this.setBeforeRequest = function(callback) { onBeforeRequest = callback };
+
+	// Called when Component does not override his onAction slot.
+	var onDefaultAction = function() {};
+	this.setDefaultAction = function(callback) { onDefaultAction = callback };
+
+	// Called when no action Component is defined
+	var onFallbackAction = function() {};
+	this.setFallbackAction = function(callback) { onFallbackAction = callback };
+
+	// Called when Component does not override his onClick slot.
+	var onClickCallback = function() {};
+	this.setClickCallback = function(callback) { onClickCallback = callback };
+
+	// Called when Component does not override his onSubmit slot.
+	var onSubmitCallback = function() {};
+
+	// Called when Component does not override his onError slot.
+	var onRequestError = function(json) { console.error(json) };
+	this.setRequestError = function(callback) { onRequestError = callback };
+
 
 	// Render function
 	// p = { k: { dataid: v } }
@@ -246,6 +280,7 @@ var sj = new function(endpoint) {
 	}
 
 	function onaction(ev) {
+
 		var el = ev.target;
 		if (!el || el.hasAttribute("target") || el.hasAttribute("download")) return;
 		while (el && !el.hasAttribute("data-component") && el != document.body) el = el.parentNode;
@@ -258,12 +293,14 @@ var sj = new function(endpoint) {
 
 		while (target.tagName != "A" && target.tagName != "AREA" && target.tagName != "FORM" && target != el) target = target.parentNode;
 		if (target.tagName == "A" || target.tagName == "AREA") {
+			if (onUnloadAction({ query: target.hash, element: target }) === false) return;
 			sj.call(target.hash, target);
 			ev.preventDefault();
 		} else if (target.tagName == "FORM" && ev.type == 'submit') {
 			var hash = target.action;
 			var n = hash.search(/#[!\?]/);
 			if (n > -1) hash = hash.substring(n);
+			if (onUnloadAction({ query: hash, element: target }) === false) return;
 			sj.call(hash, target);
 			ev.preventDefault();
 		} else {
@@ -381,26 +418,6 @@ var sj = new function(endpoint) {
 	var endpoint = null;
 	var components = {};
 	var containers = {};
-
-	// Called before request to server is executed. Useful to add common params or to log history
-	var onBeforeRequest = function() {};
-	// Called when request is executed. Useful to show spinner.
-	var onRequestWait = function() {};
-	// Called when request is completed. Useful to hide spinner.
-	var onRequestComplete = function() {};
-
-	// Called before the onAction slot is called. Useful to log history.
-	var onBeforeAction = function() {};
-	// Called when Component does not override his onAction slot.
-	var onDefaultAction = function() {};
-	// Called when no action Component is defined
-	var onFallbackAction = function() {};
-	// Called when Component does not override his onClick slot.
-	var onClickCallback = function() {};
-	// Called when Component does not override his onSubmit slot.
-	var onSubmitCallback = function() {};
-	// Called when Component does not override his onError slot.
-	var onRequestError = function(json) { console.error(json) };
 
 	document.addEventListener('DOMContentLoaded', function() {
 		document.body.addEventListener("click", onaction, false);
