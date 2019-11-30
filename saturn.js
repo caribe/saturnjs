@@ -1,55 +1,71 @@
 "use strict";
 
-var sj = new function(endpoint) {
+class ComponentClass {
 
-	// General endpoint for client-server interaction
-	this.setEndpoint = function(url) { endpoint = url };
+	constructor(id, obj) {
+		this.id = id;
+		this.el = document.getElementById(id);
+		if (!this.el) throw "Component `"+id+"` not found";
+		this.el.setAttribute("data-component", "");
+		this.loop = this.el;
 
-	// *** Hooks *** //
+		for (var i in obj) {
+			if (i == "loop") obj[i] = document.getElementById(obj[i]);
+			this[i] = obj[i];
+		}
 
-	// Called before request to server is executed. Useful to add common params or to log history
-	var onBeforeRequest = function() {};
-	this.setBeforeAction = function(callback) { onBeforeAction = callback };
+		this.oncreate = function() {}
+		this.onshow = function() {}
+		this.onpostshow = function() {}
+		this.onprehide = function() {}
+		this.onhide = function() {}
+		this.onclick = function(ev, target) { onClickCallback(ev, this.el, target) }
+		this.onaction = function(action, target) {
+			if (this[action.identry]) {
+				this[action.identry](action, target, this);
+				return true;
+			} else {
+				return onDefaultAction(action, target, this);
+			}
+		};
 
-	// Called when request is executed. Useful to show spinner.
-	var onRequestWait = function() {};
-	this.setRequestWait = function(callback) { onRequestWait = callback };
+		this.onsubmit = function(ev, target) { onSubmitCallback(ev, this.el, target) }
+		this.onrequest = function() {}
+		this.onresponse = function() {}
+		this.onerror = function(json) { onRequestError(json) }
+	}
 
-	// Called when request is completed. Useful to hide spinner.
-	var onRequestComplete = function() {};
-	this.setRequestComplete = function(callback) { onRequestComplete = callback };
+	hide() {
+		this.onprehide();
+		this.el.hidden = true;
+		this.onhide();
+	}
 
-	// Called before a call is done, useful for auto saving.
-	var onUnloadAction = function() {};
-	this.setUnloadAction = function(callback) { onUnloadAction = callback };
+	show() {
+		this.onshow();
+		this.el.hidden = false;
+		this.onpostshow();
+	}
 
-	// Called before the onAction slot is called. Useful to log history.
-	var onBeforeAction = function() {};
-	this.setBeforeRequest = function(callback) { onBeforeRequest = callback };
+	visible(b) {
+		if (b) this.show(); else this.hide();
+	}
 
-	// Called when Component does not override his onAction slot.
-	var onDefaultAction = function() {};
-	this.setDefaultAction = function(callback) { onDefaultAction = callback };
+	action(q) {
+		sj.request(q);
+	}
 
-	// Called when no action Component is defined
-	var onFallbackAction = function() {};
-	this.setFallbackAction = function(callback) { onFallbackAction = callback };
+	$(id) {
+		return this.el.querySelector("[data-id="+id+"]");
+	}
 
-	// Called when Component does not override his onClick slot.
-	var onClickCallback = function() {};
-	this.setClickCallback = function(callback) { onClickCallback = callback };
-
-	// Called when Component does not override his onSubmit slot.
-	var onSubmitCallback = function() {};
-
-	// Called when Component does not override his onError slot.
-	var onRequestError = function(json) { console.error(json) };
-	this.setRequestError = function(callback) { onRequestError = callback };
-
+	getElement(id) {
+		this.$(id);
+	}
 
 	// Render function
 	// p = { k: { dataid: v } }
-	function renderSingle(el, p, opt) {
+	renderSingle(el, p, opt) {
 		for (var k in p) {
 			var a = p[k];
 			if (typeof a == "string" || typeof a == "number" || a instanceof Array || a instanceof HTMLElement) a = { _: a };
@@ -58,11 +74,11 @@ var sj = new function(endpoint) {
 			var list = k == "_" ? [el] : Array.from(el.querySelectorAll("[data-id="+k+"]"));
 			if (!list.length) throw "Element `"+el.id+"`.`"+k+"` not found";
 
-			list.forEach(function(l) {
+			list.forEach((l) => {
 				for (var i in a) {
 					if (i == "_") {
 						if (a[i] instanceof Array) {
-							renderArray(l, a[i], opt);
+							this.renderArray(l, a[i], opt);
 						} else if (a[i] instanceof HTMLElement) {
 							l.parentNode.replaceChild(a[i], l);
 						} else if (l.tagName == "INPUT" && (l.type == "radio" || l.type == "checkbox")) {
@@ -111,106 +127,114 @@ var sj = new function(endpoint) {
 		}
 	}
 
-	function renderArray(el, p, opt) {
-		if (!opt.append && el.lastElementChild) while (el.children.length > 1) el.removeChild(el.lastElementChild);
-		el.hidden = false;
-		p.forEach(function(i) {
-			if (i instanceof HTMLElement) {
-				el.appendChild(i);
-			} else {
-				var clone = el.firstElementChild.cloneNode(true);
-				clone.hidden = false;
-				renderSingle(clone, i, opt);
-				el.appendChild(clone);
-			}
-		});
-	}
-
-	var componentClass = function(id, obj) {
-
-		this.oncreate = function() {}
-		this.onshow = function() {}
-		this.onpostshow = function() {}
-		this.onprehide = function() {}
-		this.onhide = function() {}
-		this.onclick = function(ev, target) { onClickCallback(ev, this.el, target) }
-		this.onaction = function(action, target) {
-			if (this[action.identry]) {
-				this[action.identry](action, target, this);
-				return true;
-			} else {
-				return onDefaultAction(action, target, this);
-			}
-		}
-		this.onsubmit = function(ev, target) { onSubmitCallback(ev, this.el, target) }
-		this.onrequest = function() {}
-		this.onresponse = function() {}
-		this.onerror = function(json) { onRequestError(json) }
-
-		this.hide = function() {
-			this.onprehide();
-			this.el.hidden = true;
-			this.onhide();
-		}
-		this.show = function() {
-			this.onshow();
-			this.el.hidden = false;
-			this.onpostshow();
-		}
-		this.visible = function(b) {
-			if (b) this.show(); else this.hide();
-		}
-
-		this.action = function(q) {
-			sj.request(q);
-		},
-
-		this.render = function(p, opt) {
-			if (!loaded || !p || typeof p != "object") return;
-			if (!opt) opt = {};
-
-			var el;
-			if (!opt.sub) {
-				el = this.el;
-			} else if (typeof opt.sub == "string") {
-				el = this.el.querySelector("[data-id="+opt.sub+"]");
-			} else if (typeof opt.sub == "object") {
-				var t = opt.sub;
-				while (t != document.body && t != this.el) t = t.parentNode;
-				if (t == this.el) {
-					el = opt.sub;
+	renderArray(el, p, opt) {
+		if (el.dataset.template) {
+			if (!opt.append) el.innerHTML = "";
+			el.hidden = false;
+			let tpl = this.$(el.dataset.template);
+			p.forEach(i => {
+				if (i instanceof HTMLElement) {
+					el.appendChild(i);
 				} else {
-					throw "Element outside the Component";
+					var clone = document.importNode(tpl.content, true).children[0];
+					this.renderSingle(clone, i, opt);
+					el.appendChild(clone);
 				}
-			}
-			if (!el) throw "Root element not found";
-
-			renderSingle(el, p, opt);
-
-			if (this.onrender) this.onrender();
+			});
+		} else {
+			if (!opt.append && el.lastElementChild) while (el.children.length > 1) el.removeChild(el.lastElementChild);
+			el.hidden = false;
+			p.forEach((i) => {
+				if (i instanceof HTMLElement) {
+					el.appendChild(i);
+				} else {
+					var clone = el.firstElementChild.cloneNode(true);
+					clone.hidden = false;
+					this.renderSingle(clone, i, opt);
+					el.appendChild(clone);
+				}
+			});
 		}
-
-		this.getElement = function(id) {
-			return this.el.querySelector("[data-id="+id+"]");
-		},
-
-		this.id = id;
-		this.el = document.getElementById(id);
-		if (!this.el) throw "Component `"+id+"` not found";
-		this.el.setAttribute("data-component", "");
-		this.loop = this.el;
-
-		for (var i in obj) {
-			if (i == "loop") obj[i] = document.getElementById(obj[i]);
-			this[i] = obj[i];
-		}
-
 	}
+
+	render(p, opt) {
+		if (!sj.loaded || !p || typeof p != "object") return;
+		if (!opt) opt = {};
+
+		let el;
+		if (!opt.sub) {
+			el = this.el;
+		} else if (typeof opt.sub == "string") {
+			el = this.el.querySelector("[data-id="+opt.sub+"]");
+		} else if (typeof opt.sub == "object") {
+			let t = opt.sub;
+			while (t != document.body && t != this.el) t = t.parentNode;
+			if (t == this.el) {
+				el = opt.sub;
+			} else {
+				throw "Element outside the Component";
+			}
+		}
+		if (!el) throw "Root element not found";
+
+		this.renderSingle(el, p, opt);
+
+		if (this.onrender) this.onrender();
+	}
+}
+
+
+var sj = new function(endpoint) {
+
+	// General endpoint for client-server interaction
+	this.setEndpoint = function(url) { endpoint = url };
+
+	// *** Hooks *** //
+
+	// Called before request to server is executed. Useful to add common params or to log history
+	var onBeforeRequest = function() {};
+	this.setBeforeAction = function(callback) { onBeforeAction = callback };
+
+	// Called when request is executed. Useful to show spinner.
+	var onRequestWait = function() {};
+	this.setRequestWait = function(callback) { onRequestWait = callback };
+
+	// Called when request is completed. Useful to hide spinner.
+	var onRequestComplete = function() {};
+	this.setRequestComplete = function(callback) { onRequestComplete = callback };
+
+	// Called before a call is done, useful for auto saving.
+	var onUnloadAction = function() {};
+	this.setUnloadAction = function(callback) { onUnloadAction = callback };
+
+	// Called before the onAction slot is called. Useful to log history.
+	var onBeforeAction = function() {};
+	this.setBeforeRequest = function(callback) { onBeforeRequest = callback };
+
+	// Called when Component does not override his onAction slot.
+	var onDefaultAction = function() {};
+	this.setDefaultAction = function(callback) { onDefaultAction = callback };
+
+	// Called when no action Component is defined
+	var onFallbackAction = function() {};
+	this.setFallbackAction = function(callback) { onFallbackAction = callback };
+
+	// Called when Component does not override his onClick slot.
+	var onClickCallback = function() {};
+	this.setClickCallback = function(callback) { onClickCallback = callback };
+
+	// Called when Component does not override his onSubmit slot.
+	var onSubmitCallback = function() {};
+
+	// Called when Component does not override his onError slot.
+	var onRequestError = function(json) { console.error(json) };
+	this.setRequestError = function(callback) { onRequestError = callback };
 
 	this.component = function(id, obj) {
 		components[id] = (obj ? obj : {});
-		if (loaded) {
-			components[id] = new componentClass(id, obj);
+
+		if (sj.loaded) {
+			components[id] = new ComponentClass(id, obj);
 			components[id].oncreate();
 		}
 	}
@@ -250,7 +274,7 @@ var sj = new function(endpoint) {
 
 	this.container = function(id, start, obj) {
 		containers[id] = [start, obj];
-		if (loaded) {
+		if (sj.loaded) {
 			containers[id] = new containerClass(id, start, obj);
 		}
 	}
@@ -414,21 +438,21 @@ var sj = new function(endpoint) {
 		if (onRequestWait) onRequestWait();
 	}
 
-	var loaded = false;
+	this.loaded = false;
 	var endpoint = null;
 	var components = {};
 	var containers = {};
 
-	document.addEventListener('DOMContentLoaded', function() {
+	document.addEventListener('DOMContentLoaded', () => {
 		document.body.addEventListener("click", onaction, false);
 		document.body.addEventListener("submit", onaction, false);
 
-		loaded = true;
+		this.loaded = true;
 		for (var i in components) {
-			sj.component(i, components[i]);
+			this.component(i, components[i]);
 		}
 		for (var i in containers) {
-			sj.container(i, containers[i][0], containers[i][1]);
+			this.container(i, containers[i][0], containers[i][1]);
 		}
 
 		var event = document.createEvent('Event');
