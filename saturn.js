@@ -9,11 +9,6 @@ class ComponentClass {
 		this.el.setAttribute("data-component", "");
 		this.loop = this.el;
 
-		for (var i in obj) {
-			if (i == "loop") obj[i] = document.getElementById(obj[i]);
-			this[i] = obj[i];
-		}
-
 		this.oncreate = function() {}
 		this.onshow = function() {}
 		this.onpostshow = function() {}
@@ -33,6 +28,11 @@ class ComponentClass {
 		this.onrequest = function() {}
 		this.onresponse = function() {}
 		this.onerror = function(json) { onRequestError(json) }
+
+		for (var i in obj) {
+			if (i == "loop") obj[i] = document.getElementById(obj[i]);
+			this[i] = obj[i];
+		}
 	}
 
 	hide() {
