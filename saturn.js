@@ -341,16 +341,43 @@ var sj = new function(endpoint) {
 			components[params.do].onrequest(params, element);
 			sj.request(query, element);
 		} else if (params.mode == "#!") {
-			if (!params.action) params.action = "action";
-			params.method = "internal"
-			params.identry = params.method+"/"+params.action;
-			params.params = {};
-			onBeforeAction(params);
-			if (!components[params.do]) throw "Component `"+params.do+"` not found";
-			var res = components[params.do].onaction(params, element);
-			if (typeof res == "undefined" || res === false) {
-				onDefaultAction(params);
-			}
+			_internal(params, element);
+		}
+	}
+
+	/**
+	 * Call to internal
+	 * @param String Component
+	 * @param NULL|String|Object Params for call, or action name
+	 * @param NULL|Object Params for call if first parameter is action name
+	 */
+	this.internal = function(component, p1 = null, p2 = null, p3 = null) {
+		let params, element;
+		if (typeof p1 === "object") {
+			params = p1 || {};
+			params.action = "action";
+			element = p2;
+		} else if (typeof p1 == "string") {
+			params = p2 || {};
+			params.action = p1;
+			element = p3;
+		} else {
+			throw "Invalid params for sj.internal()";
+		}
+		params.do = component;
+		_internal(params, element);
+	}
+
+	function _internal(params, element) {
+		params.method = "internal";
+		if (!params.action) params.action = "action";
+		params.identry = params.method+"/"+params.action;
+		params.params = {};
+		onBeforeAction(params);
+		if (!components[params.do]) throw "Component `"+params.do+"` not found";
+		var res = components[params.do].onaction(params, element);
+		if (typeof res == "undefined" || res === false) {
+			onDefaultAction(params);
 		}
 	}
 
