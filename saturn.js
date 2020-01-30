@@ -136,7 +136,7 @@ class ComponentClass {
 				if (i instanceof HTMLElement) {
 					el.appendChild(i);
 				} else {
-					var clone = document.importNode(tpl.content, true).children[0];
+					var clone = document.importNode(tpl.content.children[0], true);
 					this.renderSingle(clone, i, opt);
 					el.appendChild(clone);
 				}
