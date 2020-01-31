@@ -69,6 +69,7 @@ class ComponentClass {
 		for (var k in p) {
 			var a = p[k];
 			if (typeof a == "string" || typeof a == "number" || a instanceof Array || a instanceof HTMLElement) a = { _: a };
+			else if (a === null) a = { _: "" };
 			else if (typeof a == "boolean") a = { hidden: !a };
 
 			var list = k == "_" ? [el] : Array.from(el.querySelectorAll("[data-id="+k+"]"));
