@@ -14,7 +14,7 @@ class ComponentClass {
 		this.onpostshow = function() {}
 		this.onprehide = function() {}
 		this.onhide = function() {}
-		this.onclick = function(ev, target) { onClickCallback(ev, this.el, target) }
+		this.onclick = function(ev, target) { sj.onClickCallback(ev, this.el, target) }
 		this.onaction = function(action, target) {
 			if (this[action.identry]) {
 				this[action.identry](action, target, this);
@@ -24,10 +24,10 @@ class ComponentClass {
 			}
 		};
 
-		this.onsubmit = function(ev, target) { onSubmitCallback(ev, this.el, target) }
+		this.onsubmit = function(ev, target) { sj.onSubmitCallback(ev, this.el, target) }
 		this.onrequest = function() {}
 		this.onresponse = function() {}
-		this.onerror = function(json) { onRequestError(json) }
+		this.onerror = function(json) { sj.onRequestError(json) }
 
 		for (var i in obj) {
 			if (i == "loop") obj[i] = document.getElementById(obj[i]);
@@ -221,15 +221,15 @@ var sj = new function(endpoint) {
 	this.setFallbackAction = function(callback) { onFallbackAction = callback };
 
 	// Called when Component does not override his onClick slot.
-	var onClickCallback = function() {};
+	this.onClickCallback = function() {};
 	this.setClickCallback = function(callback) { onClickCallback = callback };
 
 	// Called when Component does not override his onSubmit slot.
-	var onSubmitCallback = function() {};
+	this.onSubmitCallback = function() {};
 
 	// Called when Component does not override his onError slot.
-	var onRequestError = function(json) { console.error(json) };
-	this.setRequestError = function(callback) { onRequestError = callback };
+	this.onRequestError = function(json) { console.error(json) };
+	this.setRequestError = function(callback) { this.onRequestError = callback };
 
 	this.component = function(id, obj) {
 		components[id] = (obj ? obj : {});
