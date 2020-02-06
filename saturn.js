@@ -15,12 +15,12 @@ class ComponentClass {
 		this.onprehide = function() {}
 		this.onhide = function() {}
 		this.onclick = function(ev, target) { sj.onClickCallback(ev, this.el, target) }
-		this.onaction = function(action, target) {
+		this.onaction = function(action, target, ev) {
 			if (this[action.identry]) {
-				this[action.identry](action, target, this);
+				this[action.identry](action, target, ev);
 				return true;
 			} else {
-				return onDefaultAction(action, target, this);
+				return onDefaultAction(action, target, this, ev);
 			}
 		};
 
@@ -319,7 +319,7 @@ var sj = new function(endpoint) {
 		while (target.tagName != "A" && target.tagName != "AREA" && target.tagName != "FORM" && target != el) target = target.parentNode;
 		if (target.tagName == "A" || target.tagName == "AREA") {
 			if (onUnloadAction({ query: target.hash, element: target }) === false) return;
-			sj.call(target.hash, target);
+			sj.call(target.hash, target, ev);
 			ev.preventDefault();
 		} else if (target.tagName == "FORM" && ev.type == 'submit') {
 			var hash = target.action;
@@ -333,7 +333,7 @@ var sj = new function(endpoint) {
 		}
 	}
 
-	this.call = function(query, element) {
+	this.call = function(query, element, ev) {
 		var params = {}, ps = query.substring(2).split(/[&=]/);
 		for (var i = 0; i < ps.length; i+=2) params[ps[i]] = ps[i+1];
 		params.mode = query.substring(0, 2);
@@ -342,7 +342,7 @@ var sj = new function(endpoint) {
 			components[params.do].onrequest(params, element);
 			sj.request(query, element);
 		} else if (params.mode == "#!") {
-			_internal(params, element);
+			_internal(params, element, ev);
 		}
 	}
 
@@ -369,14 +369,14 @@ var sj = new function(endpoint) {
 		_internal(params, element);
 	}
 
-	function _internal(params, element) {
+	function _internal(params, element, ev) {
 		params.method = "internal";
 		if (!params.action) params.action = "action";
 		params.identry = params.method+"/"+params.action;
 		params.params = {};
 		onBeforeAction(params);
 		if (!components[params.do]) throw "Component `"+params.do+"` not found";
-		var res = components[params.do].onaction(params, element);
+		var res = components[params.do].onaction(params, element, ev);
 		if (typeof res == "undefined" || res === false) {
 			onDefaultAction(params);
 		}
