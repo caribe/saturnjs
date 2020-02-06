@@ -60,7 +60,7 @@ class ComponentClass {
 	}
 
 	getElement(id) {
-		this.$(id);
+		return this.$(id);
 	}
 
 	// Render function
