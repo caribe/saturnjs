@@ -365,7 +365,7 @@ var sj = new function(endpoint) {
 		} else {
 			throw "Invalid params for sj.internal()";
 		}
-		params.do = component;
+		params.do = (typeof component === "object" ? component.id : component);
 		_internal(params, element);
 	}
 
