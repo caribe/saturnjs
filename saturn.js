@@ -214,7 +214,7 @@ var sj = new function(endpoint) {
 
 	// Called when Component does not override his onAction slot.
 	this.onDefaultAction = function() {};
-	this.setDefaultAction = function(callback) { onDefaultAction = callback };
+	this.setDefaultAction = function(callback) { this.onDefaultAction = callback };
 
 	// Called when no action Component is defined
 	var onFallbackAction = function() {};
@@ -222,7 +222,7 @@ var sj = new function(endpoint) {
 
 	// Called when Component does not override his onClick slot.
 	this.onClickCallback = function() {};
-	this.setClickCallback = function(callback) { onClickCallback = callback };
+	this.setClickCallback = function(callback) { this.onClickCallback = callback };
 
 	// Called when Component does not override his onSubmit slot.
 	this.onSubmitCallback = function() {};
