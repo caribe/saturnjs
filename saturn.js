@@ -20,7 +20,7 @@ class ComponentClass {
 				this[action.identry](action, target, ev);
 				return true;
 			} else {
-				return onDefaultAction(action, target, this, ev);
+				return sj.onDefaultAction(action, target, this, ev);
 			}
 		};
 
@@ -213,8 +213,8 @@ var sj = new function(endpoint) {
 	this.setBeforeRequest = function(callback) { onBeforeRequest = callback };
 
 	// Called when Component does not override his onAction slot.
-	var onDefaultAction = function() {};
-	this.setDefaultAction = function(callback) { onDefaultAction = callback };
+	this.onDefaultAction = function() {};
+	this.setDefaultAction = function(callback) { this.onDefaultAction = callback };
 
 	// Called when no action Component is defined
 	var onFallbackAction = function() {};
@@ -222,7 +222,7 @@ var sj = new function(endpoint) {
 
 	// Called when Component does not override his onClick slot.
 	this.onClickCallback = function() {};
-	this.setClickCallback = function(callback) { onClickCallback = callback };
+	this.setClickCallback = function(callback) { this.onClickCallback = callback };
 
 	// Called when Component does not override his onSubmit slot.
 	this.onSubmitCallback = function() {};
@@ -333,15 +333,13 @@ var sj = new function(endpoint) {
 
 		while (target.tagName != "A" && target.tagName != "AREA" && target.tagName != "FORM" && target != el) target = target.parentNode;
 		if (target.tagName == "A" || target.tagName == "AREA") {
-			if (onUnloadAction({ query: target.hash, element: target }) === false) return;
-			sj.call(target.hash, target, ev);
+			if (onUnloadAction({ query: target.hash, element: target }) !== false) sj.call(target.hash, target, ev);
 			ev.preventDefault();
 		} else if (target.tagName == "FORM" && ev.type == 'submit') {
 			var hash = target.action;
 			var n = hash.search(/#[!\?]/);
 			if (n > -1) hash = hash.substring(n);
-			if (onUnloadAction({ query: hash, element: target }) === false) return;
-			sj.call(hash, target);
+			if (onUnloadAction({ query: hash, element: target }) !== false) sj.call(hash, target);
 			ev.preventDefault();
 		} else {
 			onFallbackAction(el, ev);
@@ -380,7 +378,9 @@ var sj = new function(endpoint) {
 		} else {
 			throw "Invalid params for sj.internal()";
 		}
+
 		params.do = (typeof component == "object" ? component.id : component);
+
 		_internal(params, element);
 	}
 
@@ -393,7 +393,7 @@ var sj = new function(endpoint) {
 		if (!components[params.do]) throw "Component `"+params.do+"` not found";
 		var res = components[params.do].onaction(params, element, ev);
 		if (typeof res == "undefined" || res === false) {
-			onDefaultAction(params);
+			sj.onDefaultAction(params);
 		}
 	}
 
