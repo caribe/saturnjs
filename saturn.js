@@ -280,6 +280,11 @@ var sj = new function(endpoint) {
 		}
 	}
 
+	/**
+	 * Get Component by ID
+	 * @param String Component ID
+	 * @returns Component
+	 */
 	this.$ = function(id) {
 		if (components[id]) {
 			return components[id];
@@ -288,6 +293,16 @@ var sj = new function(endpoint) {
 		} else {
 			console.error("`"+id+"` not found");
 		}
+	}
+
+	/**
+	 * Get Component by Element
+	 * @param DOMElement Element to analyze
+	 * @returns Component
+	 */
+	this.$$ = function(el) {
+		while (el && !el.hasAttribute("data-component")) el = el.parentNode;
+		return el ? sj.$(el.id) : null;
 	}
 
 	function parseHash(hash) {
@@ -348,13 +363,13 @@ var sj = new function(endpoint) {
 
 	/**
 	 * Call to internal
-	 * @param String Component
+	 * @param String|Component Component
 	 * @param NULL|String|Object Params for call, or action name
 	 * @param NULL|Object Params for call if first parameter is action name
 	 */
 	this.internal = function(component, p1 = null, p2 = null, p3 = null) {
 		let params, element;
-		if (typeof p1 === "object") {
+		if (typeof p1 == "object") {
 			params = p1 || {};
 			params.action = "action";
 			element = p2;
@@ -365,7 +380,7 @@ var sj = new function(endpoint) {
 		} else {
 			throw "Invalid params for sj.internal()";
 		}
-		params.do = component;
+		params.do = (typeof component == "object" ? component.id : component);
 		_internal(params, element);
 	}
 
