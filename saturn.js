@@ -63,20 +63,43 @@ class ComponentClass {
 		return this.$(id);
 	}
 
-	// Render function
-	// p = { k: { dataid: v } }
+
+	/**
+		Render function p = { k: { dataid: v } }
+		@param HTMLElement Element to be modified
+		@param Object Field to be set
+		@param Object Render options
+	*/
 	renderSingle(el, p, opt) {
 		for (var k in p) {
 			var a = p[k];
 			if (typeof a == "string" || typeof a == "number" || a instanceof Array || a instanceof HTMLElement) a = { _: a };
 			else if (a === null) a = { _: "" };
-			else if (typeof a == "boolean") a = { hidden: !a };
+			else if (typeof a == "boolean") a = { _visible: a };
 
 			var list = k == "_" ? [el] : Array.from(el.querySelectorAll("[data-id="+k+"]"));
-			if (!list.length) throw "Element `"+el.id+"`.`"+k+"` not found";
+			if (!list.length) console.debug("Element `"+k+"` not found", el);
 
 			list.forEach((l) => {
 				for (var i in a) {
+					if (l.hasAttribute("data-if")) {
+						l.hidden = ((a[i] instanceof Array && !a[i].length) || !a[i]);
+						continue;
+					} else if (l.hasAttribute("data-else")) {
+						l.hidden = !((a[i] instanceof Array && !a[i].length) || !a[i]);
+						continue;
+					} else if (l.hasAttribute("data-when")) {
+						if ((a[i] instanceof Array && !a[i].length) || !a[i]) {
+							l.hidden = true;
+							continue;
+						} else {
+							l.hidden = false;
+						}
+					} else if (i == "_visible") {
+						l.hidden = !a[i];
+						continue;
+					}
+
 					if (i == "_") {
 						if (a[i] instanceof Array) {
 							this.renderArray(l, a[i], opt);
