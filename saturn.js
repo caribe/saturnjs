@@ -501,7 +501,7 @@ var sj = new function(endpoint) {
 			xhr.send();
 		}
 
-		if (onRequestWait) onRequestWait();
+		if (onRequestWait) onRequestWait(query.q, form);
 	}
 
 	this.loaded = false;
