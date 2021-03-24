@@ -333,12 +333,19 @@ var sj = new function(endpoint) {
 
 		var n = hash.search(/#[!\?>]/);
 		if (n > -1) {
-			hash = hash.substring(n+2);
-			method = hash.substring(1, 1);
+			method = hash.substr(n+1, 1);
+			hash = hash.substr(n+2);
 		}
 
 		var p = hash.split(/[&=]/);
 		for (var i = 0; i < p.length; i+=2) q[p[i]] = (p[i+1] ? p[i+1] : null);
+
+		var s = q.do.split(":");
+		if (s.length > 1) {
+			q.do = s[0];
+			q.action = s[1];
+		}
+
 		return { q: q, m: method };
 	}
 
@@ -369,21 +376,26 @@ var sj = new function(endpoint) {
 		}
 	}
 
-	this.call = function(query, element, ev) {
-		var params = {}, ps = query.substring(2).split(/[&=]/);
-		for (var i = 0; i < ps.length; i+=2) params[ps[i]] = ps[i+1];
-		params.mode = query.substring(0, 2);
+	/**
+	 * Calls an action programmatically
+	 * @param String An action string
+	 * @param Element An optional Element the call is bind to
+	 * @param Event An optional Event Object
+	 */
+	this.call = function(query, element = null, ev = null) {
 
-		if (params.mode == "#?") {
-			components[params.do].onrequest(params, element);
+		query = parseHash(query);
+
+		if (query.m == "?") {
+			components[query.q.do].onrequest(query, element);
 			sj.request(query, element);
-		} else if (params.mode == "#!") {
-			_internal(params, element, ev);
+		} else if (query.m == "!") {
+			_internal(query.q, element, ev);
 		}
 	}
 
 	/**
-	 * Call to internal
+	 * Call to internal programmatically
 	 * @param String|Component Component
 	 * @param NULL|String|Object Params for call, or action name
 	 * @param NULL|Object Params for call if first parameter is action name
