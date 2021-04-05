@@ -340,10 +340,12 @@ var sj = new function(endpoint) {
 		var p = hash.split(/[&=]/);
 		for (var i = 0; i < p.length; i+=2) q[p[i]] = (p[i+1] ? p[i+1] : null);
 
-		var s = q.do.split(":");
-		if (s.length > 1) {
-			q.do = s[0];
-			q.action = s[1];
+		if (q.do) {
+			var s = q.do.split(":");
+			if (s.length > 1) {
+				q.do = s[0];
+				q.action = s[1];
+			}
 		}
 
 		return { q: q, m: method };
