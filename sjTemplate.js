@@ -39,17 +39,20 @@ function sjTemplate(context = {}, options = {}) {
 		let bn = path.basename(fn);
 		if (bn[0] === "_") return;
 
-		let res = loadTpl(fn, context);
 		let dst = options.dstPath+"/"+bn;
-		fs.writeFileSync(dst, res);
 
 		console.log(fn+" => "+dst);
+
+		let res = loadTpl(fn, context);
+		fs.writeFileSync(dst, res);
+
 	});
 
 }
 
 function loadTpl(path, context, once = false) {
 	if (once && cache[path] !== undefined) return "";
+	fs.accessSync(path);
 	if (cache[path] === undefined) cache[path] = fs.readFileSync(path, "utf8");
 	return parseTpl(cache[path], context);
 }
@@ -69,31 +72,27 @@ function parseTpl(src, context) {
 			let pars = balanced('(', ')', src.substr(p));
 			p += pars.end+1;
 
-			let mm = pars.body.match(/(['"])(.*?)\1\s*,?\s*/);
-			let tpl = mm[2];
+			let pp = (new Function('ctx', 'with(ctx) return ['+pars.body+']'))(context);
 
-			let args = pars.body.substr(mm[0].length);
-			if (args) {
-				let f = new Function('ctx', 'with(ctx) return ('+pars.body.substr(mm[0].length)+')');
-				args = f(context);
-			} else {
-				args = context;
-			}
+			let tpl = pp[0];
+			let args = pp[1];
 
 			if (m[1] === "include") {
 				res += loadTpl(tpl, args);
-			} else if (m[1] == "include_once") {
+			} else if (m[1] === "include_once") {
 				res += loadTpl(tpl, args, true);
-			} else {
+			} else if (m[1] === "loop") {
 				args.forEach(a => res += loadTpl(tpl, a));
 			}
 
 		} else if (m[1] === "if") {
 
 			let cond = balanced('(', ')', src.substr(p));
+			if (!cond) throw src.substr(p, 30);
 			p += cond.end+1;
 
 			let block = balanced('{', '}', src.substr(p));
+			if (!block) throw src.substr(p, 30);
 			p += block.end+1;
 
 			let f = new Function('ctx', 'with(ctx) return ('+cond.body+')');
@@ -133,17 +132,23 @@ function sjSubmodule(subj, pars, context) {
 
 	pars = pars ? new Function('ctx', 'with(ctx) return ('+pars+')')(context) : {};
 
-	let res;
-
 	if (pars.include) {
-		res = Object.keys(subj).filter(a => pars.include.indexOf(a) !== -1).map(a => subj[a]).join("\n\n");
-	} else if (pars.exclude) {
-		res = Object.keys(subj).filter(a => pars.exclude.indexOf(a) === -1).map(a => subj[a]).join("\n\n");
-	} else {
-		res = Object.values(subj).join("\n\n");
+		return Object.keys(subj)
+			.filter(a => pars.include.indexOf(a) !== -1)
+			.map(a => parseTpl(subj[a], context))
+			.join("\n\n");
 	}
 
-	return res;
+	if (pars.exclude) {
+		return Object.keys(subj)
+			.filter(a => pars.exclude.indexOf(a) === -1)
+			.map(a => parseTpl(subj[a], context))
+			.join("\n\n");
+	}
+
+	return Object.values(subj)
+		.map(a => parseTpl(a, context))
+		.join("\n\n");
 }
 
 module.exports = sjTemplate;
