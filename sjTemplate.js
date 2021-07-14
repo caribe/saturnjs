@@ -35,7 +35,7 @@ function sjTemplate(context = {}, options = {}) {
 
 	console.log("");
 
-	glob.sync(options.srcPath+"/*").forEach(fn => {
+	glob.sync(options.srcPath+"/*.*").forEach(fn => {
 		let bn = path.basename(fn);
 		if (bn[0] === "_") return;
 
