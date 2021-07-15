@@ -389,7 +389,7 @@ var sj = new function(endpoint) {
 		query = parseHash(query);
 
 		if (query.m == "?") {
-			components[query.q.do].onrequest(query, element);
+			if (components[query.q.do]) components[query.q.do].onrequest(query, element);
 			sj.request(query, element);
 		} else if (query.m == "!") {
 			_internal(query.q, element, ev);
