@@ -442,7 +442,7 @@ var sj = new function(endpoint) {
 				var json = JSON.parse(ev.target.responseText);
 			} catch (e) {
 				console.error(ev.target.responseText);
-				onRequestError(ev);
+				sj.onRequestError(ev);
 				return;
 			}
 			if (!json.action) json.action = "action";
@@ -465,7 +465,7 @@ var sj = new function(endpoint) {
 		}, false);
 		xhr.addEventListener("error", function(ev) {
 			console.error(ev.message, ev);
-			onRequestError(ev);
+			sj.onRequestError(ev);
 		}, false);
 
 		if (typeof query == "string") query = parseHash(query);
