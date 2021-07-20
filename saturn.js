@@ -156,6 +156,8 @@ class ComponentClass {
 			if (!opt.append) el.innerHTML = "";
 			el.hidden = false;
 			let tpl = this.$(el.dataset.template);
+			if (!tpl) tpl = document.getElementById(el.dataset.template);
+			if (!tpl) throw `Template ${el.dataset.template} not found`;
 			p.forEach(i => {
 				if (i instanceof HTMLElement) {
 					el.appendChild(i);
