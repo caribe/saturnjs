@@ -22,7 +22,7 @@ function sjTemplate(context = {}, options = {}) {
 
 		let src = fs.readFileSync(a, "utf8");
 
-		let template = src.match(/<section (.*?)>(.*)<\/section>/s);
+		let template = src.match(/<(section|footer|header) (.*?)>(.*)<\/\1>/s);
 		if (template) templates[name] = template[0];
 
 		let script = src.match(/<script>(.*)<\/script>/s);
